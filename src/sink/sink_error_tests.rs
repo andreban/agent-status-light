@@ -45,3 +45,15 @@ fn test_sink_error_from_serde_json() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_sink_error_from_serialport() -> Result<()> {
+    let serial_err = serialport::Error::new(serialport::ErrorKind::NoDevice, "device not found");
+    let sink_err: SinkError = serial_err.into();
+    assert!(matches!(sink_err, SinkError::Connection(_)));
+    assert_eq!(
+        sink_err.to_string(),
+        "Sink connection failed: device not found"
+    );
+    Ok(())
+}

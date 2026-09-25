@@ -30,7 +30,7 @@ The project plan and architectural specification are documented in ZNotes note `
 ### Confirmed MVP Architecture
 - **Host Application**: Single, fast, stateless Rust CLI binary (`agent-status-light`). No background daemon process.
 - **Output Sinks**:
-  - **Direct Serial Sink**: Connects directly to the serial port on each hook event with `dtr=false, rts=false` (prevents MCU reboot), writes the state command, and closes. Port discovery via CLI arg, env var, or USB VID/PID matching.
+  - **Direct Serial Sink**: Connects directly to the serial port on each hook event with `dtr=false, rts=false` (prevents MCU reboot), writes the state command, and closes. Port configured via CLI arg (`--port`) or env var (`ASL_PORT`).
   - **Direct HTTP Sink**: Sends an HTTP request via `ureq` to a local network endpoint (Wi-Fi MCU or WLED).
 - **Wire Protocol**: Strictly simplex (host-to-device). Unified newline-delimited JSON payload (`{"state":"...","agent":"...","session_id":"..."}\n`) shared across both Serial and HTTP. No ping/pong handshake.
 - **First Firmware Target**: **Pimoroni Tiny 2040** (RP2040, native USB CDC, active-low onboard RGB LED on GP18/GP19/GP20).
@@ -73,7 +73,7 @@ The project plan and architectural specification are documented in ZNotes note `
 - **Binary Module Visibility**: In binary crates (`main.rs`), declare internal modules as private (`mod <name>;`) rather than `pub mod`. Avoid premature `pub use` re-exports before they are consumed to prevent compiler `unused_imports` warnings.
 - **No Horizontal ASCII Dividers**: Do not use horizontal ASCII divider comments (such as `// -------------------`) to partition code files. If a module accumulates distinct responsibilities, decompose it into smaller, domain-specific modules.
 - **Modularization & Single-Type Files**: Structure code into clean, domain-specific modules grouping related types. Aim for one file per strong type (e.g. `agent_state.rs`, `agent_kind.rs`, `payload.rs`) paired with sibling tests, rather than bundling multiple distinct types into a single large file.
-- **Named Constants over Magic Literals**: Avoid hardcoding inline magic strings or numbers for timeouts, baud rates, default states, or hardware IDs. Define them as documented module-level constants (e.g., `pub const DEFAULT_BAUD: u32 = 115_200;`, `pub const PIMORONI_TINY2040_VID: u16 = 0x16D0;`).
+- **Named Constants over Magic Literals**: Avoid hardcoding inline magic strings or numbers for timeouts, baud rates, or default states. Define them as documented module-level constants (e.g., `pub const DEFAULT_BAUD: u32 = 115_200;`, `pub const DEFAULT_TIMEOUT_MS: u64 = 500;`).
 - **Direct Imports over Fully Qualified Paths**: Import types, traits, and modules (e.g. `Display`, `FromStr`, `Error`) at the top of the file using standard `use` statements. Only use fully qualified paths when strictly necessary to resolve ambiguity or namespace collisions.
 - **Idiomatic Standard Conversion Traits over Ad-Hoc Methods**: Implement standard conversion traits (`From`, `TryFrom`, `FromStr`) instead of inventing ad-hoc helper methods (e.g., `to_json()`, `from_json()`, `to_xyz()`). Do not introduce redundant method wrappers that merely delegate to standard trait implementations.
 - **Avoid Speculative or Noisy Attributes**: Do not add `#[must_use]` or similar speculative attributes across application code, basic constructors, or getters unless specifically mandated by API requirements or project-wide linter configurations.

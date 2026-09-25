@@ -26,6 +26,12 @@ pub enum SinkError {
     Other(String),
 }
 
+impl From<serialport::Error> for SinkError {
+    fn from(err: serialport::Error) -> Self {
+        Self::Connection(err.to_string())
+    }
+}
+
 #[cfg(test)]
 #[path = "sink_error_tests.rs"]
 mod tests;

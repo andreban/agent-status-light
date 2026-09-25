@@ -12,7 +12,7 @@ use clap::Parser;
 
 use cli::{Cli, Command};
 use error::{Error, Result};
-use model::{AgentKind, StatusPayload};
+use model::{AgentKind, AgentState, StatusPayload};
 use sink::{SerialSink, SinkError, SinkType, StatusSink, StdoutSink};
 
 fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
@@ -44,6 +44,14 @@ fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
     Ok(())
 }
 
+fn hook_response_json(payload: &StatusPayload) -> &'static str {
+    if payload.state == AgentState::Executing || payload.state == AgentState::Waiting {
+        "{\"decision\": \"allow\"}"
+    } else {
+        "{}"
+    }
+}
+
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
@@ -62,7 +70,15 @@ fn run() -> Result<()> {
         }
     };
 
-    dispatch_sink(&cli, &payload)
+    dispatch_sink(&cli, &payload)?;
+
+    // If executed as a hook with a non-stdout sink, output valid JSON to satisfy
+    // agent hook runner contracts (e.g. Google Antigravity PreToolUse requires {"decision": "allow"}).
+    if cli.command.is_none() && cli.sink != SinkType::Stdout {
+        println!("{}", hook_response_json(&payload));
+    }
+
+    Ok(())
 }
 
 fn main() {

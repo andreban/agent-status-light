@@ -1,0 +1,44 @@
+{
+  "status-light": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "agent-status-light --event PreInvocation --port /dev/ttyACM0"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --event PreToolUse --port /dev/ttyACM0"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --event PostToolUse --port /dev/ttyACM0"
+          }
+        ]
+      }
+    ],
+    "PostInvocation": [
+      {
+        "type": "command",
+        "command": "agent-status-light --event PostInvocation --port /dev/ttyACM0"
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "agent-status-light --event Stop --port /dev/ttyACM0"
+      }
+    ]
+  }
+}

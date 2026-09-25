@@ -20,7 +20,7 @@ pub struct Cli {
     )]
     pub sink: SinkType,
 
-    /// Serial port path (if omitted, auto-matches known USB VID/PID).
+    /// Serial port path (required when using serial sink).
     #[arg(long, env = "ASL_PORT", help = "Serial port path")]
     pub port: Option<String>,
 

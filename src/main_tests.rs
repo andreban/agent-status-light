@@ -78,6 +78,9 @@ fn test_hook_response_json() -> Result<()> {
         StatusPayload::with_default_session(AgentState::Executing, AgentKind::Antigravity);
     assert_eq!(hook_response_json(&executing), "{\"decision\": \"allow\"}");
 
+    let waiting = StatusPayload::with_default_session(AgentState::Waiting, AgentKind::Antigravity);
+    assert_eq!(hook_response_json(&waiting), "{\"decision\": \"allow\"}");
+
     let thinking =
         StatusPayload::with_default_session(AgentState::Thinking, AgentKind::Antigravity);
     assert_eq!(hook_response_json(&thinking), "{}");

@@ -38,6 +38,23 @@ fn test_antigravity_pre_tool_use() -> Result<()> {
 }
 
 #[test]
+fn test_antigravity_pre_tool_use_ask_question() -> Result<()> {
+    let payload = json!({
+        "conversationId": "test-conv-123",
+        "toolCall": {
+            "name": "ask_question",
+            "args": {}
+        }
+    });
+
+    let status = parse_antigravity(&payload, None)?;
+    assert_eq!(status.state, AgentState::Waiting);
+    assert_eq!(status.agent, AgentKind::Antigravity);
+    assert_eq!(status.session_id, "test-conv-123");
+    Ok(())
+}
+
+#[test]
 fn test_antigravity_post_tool_use() -> Result<()> {
     let payload = json!({
         "conversationId": "test-conv-123",

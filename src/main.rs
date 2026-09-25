@@ -45,7 +45,7 @@ fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
 }
 
 fn hook_response_json(payload: &StatusPayload) -> &'static str {
-    if payload.state == AgentState::Executing {
+    if payload.state == AgentState::Executing || payload.state == AgentState::Waiting {
         "{\"decision\": \"allow\"}"
     } else {
         "{}"

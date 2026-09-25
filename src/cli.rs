@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::model::AgentState;
+use crate::model::{AgentKind, AgentState};
 use crate::sink::{DEFAULT_BAUD, DEFAULT_SINK_STR, DEFAULT_TIMEOUT_MS, SinkType};
 
 /// Command-line arguments and configuration for agent-status-light.
@@ -45,6 +45,17 @@ pub struct Cli {
         help = "Transport timeout in milliseconds"
     )]
     pub timeout_ms: u64,
+
+    /// Agent runtime kind override.
+    #[arg(
+        long,
+        help = "Agent runtime override (antigravity, claude, codex, cli)"
+    )]
+    pub agent: Option<AgentKind>,
+
+    /// Hook event name override.
+    #[arg(long, help = "Hook event name override")]
+    pub event: Option<String>,
 
     /// Optional subcommand.
     #[command(subcommand)]

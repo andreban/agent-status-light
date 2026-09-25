@@ -1,8 +1,10 @@
 mod cli;
 mod error;
+mod hook;
 mod model;
 mod sink;
 
+use std::io::{self, IsTerminal};
 use std::process;
 
 use clap::Parser;
@@ -15,16 +17,23 @@ use sink::{StatusSink, StdoutSink};
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    match cli.command {
-        Some(Command::Set { state }) => {
-            let payload = StatusPayload::with_default_session(state, AgentKind::Cli);
-            let mut sink = StdoutSink::new();
-            sink.send(&payload)?;
-        }
+    let payload = match cli.command {
+        Some(Command::Set { state }) => StatusPayload::with_default_session(state, AgentKind::Cli),
         None => {
-            println!("agent-status-light: no command provided (use --help for usage)");
+            if io::stdin().is_terminal() && cli.event.is_none() {
+                println!(
+                    "agent-status-light: no command or hook payload provided (use --help for usage)"
+                );
+                return Ok(());
+            }
+
+            let input = hook::read_stdin()?;
+            hook::parse_hook(&input, cli.agent, cli.event.as_deref())?
         }
-    }
+    };
+
+    let mut sink = StdoutSink::new();
+    sink.send(&payload)?;
 
     Ok(())
 }

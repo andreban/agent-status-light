@@ -2,6 +2,7 @@ use std::io;
 
 use thiserror::Error;
 
+use crate::hook::HookError;
 use crate::sink::SinkError;
 
 /// Core domain and application errors for agent-status-light.
@@ -18,6 +19,10 @@ pub enum Error {
     /// Status sink failure.
     #[error("Sink error: {0}")]
     Sink(#[from] SinkError),
+
+    /// Agent hook ingestion failure.
+    #[error("Hook error: {0}")]
+    Hook(#[from] HookError),
 
     /// Invalid or unrecognized agent state string.
     #[error("Invalid agent state: {0}")]

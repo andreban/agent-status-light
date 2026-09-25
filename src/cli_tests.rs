@@ -3,7 +3,7 @@ use std::error::Error as StdError;
 use clap::Parser;
 
 use super::*;
-use crate::model::AgentState;
+use crate::model::{AgentKind, AgentState};
 use crate::sink::SinkType;
 
 type Result<T> = core::result::Result<T, Box<dyn StdError>>;
@@ -16,6 +16,8 @@ fn test_cli_default_parsing() -> Result<()> {
     assert_eq!(cli.timeout_ms, DEFAULT_TIMEOUT_MS);
     assert_eq!(cli.port, None);
     assert_eq!(cli.url, None);
+    assert_eq!(cli.agent, None);
+    assert_eq!(cli.event, None);
     assert_eq!(cli.command, None);
     Ok(())
 }
@@ -42,6 +44,21 @@ fn test_cli_custom_flags_parsing() -> Result<()> {
     assert_eq!(cli.url, Some("http://192.168.1.100/status".to_string()));
     assert_eq!(cli.timeout_ms, 1500);
     assert_eq!(cli.command, None);
+    Ok(())
+}
+
+#[test]
+fn test_cli_agent_and_event_flags() -> Result<()> {
+    let cli = Cli::try_parse_from([
+        "agent-status-light",
+        "--agent",
+        "antigravity",
+        "--event",
+        "PreInvocation",
+    ])?;
+
+    assert_eq!(cli.agent, Some(AgentKind::Antigravity));
+    assert_eq!(cli.event, Some("PreInvocation".to_string()));
     Ok(())
 }
 

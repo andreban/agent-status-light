@@ -2,6 +2,8 @@ use std::io;
 
 use thiserror::Error;
 
+use crate::sink::SinkError;
+
 /// Core domain and application errors for agent-status-light.
 #[derive(Debug, Error)]
 pub enum Error {
@@ -12,6 +14,10 @@ pub enum Error {
     /// Standard I/O failure.
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
+
+    /// Status sink failure.
+    #[error("Sink error: {0}")]
+    Sink(#[from] SinkError),
 
     /// Invalid or unrecognized agent state string.
     #[error("Invalid agent state: {0}")]

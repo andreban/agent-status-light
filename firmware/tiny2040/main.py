@@ -12,7 +12,7 @@ Supported States:
     - thinking  : Breathing cyan
     - executing : Pulsing purple/blue
     - waiting   : Double-blink amber alert
-    - done      : Solid green with auto-off (20s)
+    - done      : Solid green
     - error     : Flashing red alert
     - off       : All LEDs off
 """
@@ -31,10 +31,6 @@ PIN_BLUE = 20
 
 # PWM frequency (Hz)
 PWM_FREQ = 1000
-
-# Auto-off timeout for 'done' state (milliseconds)
-DONE_TIMEOUT_MS = 20_000
-DONE_FADE_MS = 3_000
 
 
 class RGBController:
@@ -119,16 +115,8 @@ class StatusLightApp:
                 self.led.off()
 
         elif self.state == "done":
-            # Solid green with auto-off after 20 seconds (fade in last 3s)
-            if elapsed >= DONE_TIMEOUT_MS:
-                self.state = "off"
-                self.led.off()
-            elif elapsed > (DONE_TIMEOUT_MS - DONE_FADE_MS):
-                remaining = DONE_TIMEOUT_MS - elapsed
-                fade = remaining / float(DONE_FADE_MS)
-                self.led.set_rgb(0.0, fade * 1.0, 0.0)
-            else:
-                self.led.set_rgb(0.0, 1.0, 0.0)
+            # Solid green until next interaction
+            self.led.set_rgb(0.0, 1.0, 0.0)
 
         elif self.state == "error":
             # 0.4s flashing red warning alert

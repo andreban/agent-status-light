@@ -50,11 +50,7 @@ class MockStatusLightApp:
             else:
                 self.led.off()
         elif self.state == "done":
-            if elapsed >= 20_000:
-                self.state = "off"
-                self.led.off()
-            else:
-                self.led.set_rgb(0.0, 1.0, 0.0)
+            self.led.set_rgb(0.0, 1.0, 0.0)
         elif self.state == "error":
             cycle = elapsed % 400
             if cycle < 200:
@@ -89,7 +85,7 @@ class TestFirmwareLogic(unittest.TestCase):
         self.assertEqual(app.state, "off")
         self.assertTrue(led.is_off)
 
-    def test_done_auto_off(self):
+    def test_done_stays_green(self):
         led = MockLED()
         app = MockStatusLightApp(led)
 
@@ -98,17 +94,14 @@ class TestFirmwareLogic(unittest.TestCase):
         app.update()
         self.assertEqual(app.state, "done")
         self.assertFalse(led.is_off)
+        self.assertEqual((led.r, led.g, led.b), (0.0, 1.0, 0.0))
 
-        # Before 20s
-        app.current_time_ms = 19_000
+        # Stays green indefinitely (e.g. after 60s)
+        app.current_time_ms = 60_000
         app.update()
         self.assertEqual(app.state, "done")
-
-        # After 20s
-        app.current_time_ms = 20_001
-        app.update()
-        self.assertEqual(app.state, "off")
-        self.assertTrue(led.is_off)
+        self.assertFalse(led.is_off)
+        self.assertEqual((led.r, led.g, led.b), (0.0, 1.0, 0.0))
 
     def test_waiting_double_blink_timing(self):
         led = MockLED()

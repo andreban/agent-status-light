@@ -24,7 +24,7 @@ Reference MicroPython firmware for the **Pimoroni Tiny 2040** (Raspberry Pi RP20
 | **`thinking`** | Breathing Cyan | Smooth 2.0s sinusoidal brightness breathe |
 | **`executing`** | Pulsing Purple/Blue | Fast 0.8s pulsing animation |
 | **`waiting`** | Double-Blink Amber | Sharp attention double-flash alert |
-| **`done`** | Solid Green | Solid green with auto-fade and turn-off after 20s |
+| **`done`** | Solid Green | Solid green until next interaction |
 | **`error`** | Flashing Red | 0.4s fast flashing warning alert |
 | **`off`** | All Off | All PWM channels disabled |
 

@@ -71,3 +71,21 @@ fn test_dispatch_sink_serial_invalid_port() -> Result<()> {
     assert!(err_str.contains("Sink connection failed"));
     Ok(())
 }
+
+#[test]
+fn test_hook_response_json() -> Result<()> {
+    let executing =
+        StatusPayload::with_default_session(AgentState::Executing, AgentKind::Antigravity);
+    assert_eq!(hook_response_json(&executing), "{\"decision\": \"allow\"}");
+
+    let thinking =
+        StatusPayload::with_default_session(AgentState::Thinking, AgentKind::Antigravity);
+    assert_eq!(hook_response_json(&thinking), "{}");
+
+    let done = StatusPayload::with_default_session(AgentState::Done, AgentKind::Claude);
+    assert_eq!(hook_response_json(&done), "{}");
+
+    let error = StatusPayload::with_default_session(AgentState::Error, AgentKind::Codex);
+    assert_eq!(hook_response_json(&error), "{}");
+    Ok(())
+}

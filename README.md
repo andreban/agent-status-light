@@ -139,7 +139,7 @@ Antigravity executes lifecycle hooks defined in `.agents/hooks.json` in your wor
        "PreInvocation": [
          {
            "type": "command",
-           "command": "agent-status-light --port /dev/ttyACM0"
+           "command": "agent-status-light --event PreInvocation --port /dev/ttyACM0"
          }
        ],
        "PreToolUse": [
@@ -148,7 +148,18 @@ Antigravity executes lifecycle hooks defined in `.agents/hooks.json` in your wor
            "hooks": [
              {
                "type": "command",
-               "command": "agent-status-light --port /dev/ttyACM0"
+               "command": "agent-status-light --event PreToolUse --port /dev/ttyACM0"
+             }
+           ]
+         }
+       ],
+       "PostToolUse": [
+         {
+           "matcher": "*",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "agent-status-light --event PostToolUse --port /dev/ttyACM0"
              }
            ]
          }
@@ -156,13 +167,13 @@ Antigravity executes lifecycle hooks defined in `.agents/hooks.json` in your wor
        "PostInvocation": [
          {
            "type": "command",
-           "command": "agent-status-light --port /dev/ttyACM0"
+           "command": "agent-status-light --event PostInvocation --port /dev/ttyACM0"
          }
        ],
        "Stop": [
          {
            "type": "command",
-           "command": "agent-status-light --port /dev/ttyACM0"
+           "command": "agent-status-light --event Stop --port /dev/ttyACM0"
          }
        ]
      }

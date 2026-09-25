@@ -38,6 +38,28 @@ fn test_antigravity_pre_tool_use() -> Result<()> {
 }
 
 #[test]
+fn test_antigravity_post_tool_use() -> Result<()> {
+    let payload = json!({
+        "conversationId": "test-conv-123",
+        "stepIdx": 5
+    });
+
+    let status = parse_antigravity(&payload, None)?;
+    assert_eq!(status.state, AgentState::Thinking);
+    assert_eq!(status.agent, AgentKind::Antigravity);
+
+    let error_payload = json!({
+        "conversationId": "test-conv-123",
+        "stepIdx": 5,
+        "error": "command failed"
+    });
+
+    let err_status = parse_antigravity(&error_payload, None)?;
+    assert_eq!(err_status.state, AgentState::Error);
+    Ok(())
+}
+
+#[test]
 fn test_antigravity_post_invocation_override() -> Result<()> {
     let payload = json!({
         "conversationId": "test-conv-123",

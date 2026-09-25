@@ -1,12 +1,6 @@
-#![deny(unsafe_code)]
-
-#[allow(dead_code)]
 mod cli;
-#[allow(dead_code)]
 mod error;
-#[allow(dead_code)]
 mod model;
-#[allow(dead_code)]
 mod sink;
 
 use std::process;

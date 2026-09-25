@@ -25,6 +25,7 @@ impl Default for StdoutSink<io::Stdout> {
     }
 }
 
+#[cfg(test)]
 impl<W: Write> StdoutSink<W> {
     /// Creates a sink writing to the provided custom writer.
     pub fn with_writer(writer: W) -> Self {

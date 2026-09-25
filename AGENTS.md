@@ -64,7 +64,8 @@ The project plan and architectural specification are documented in ZNotes note `
     ```
 
 ### Rust Architecture & Code Standards
-- **Deny Unsafe Code**: Enforce `#![deny(unsafe_code)]`.
+- **Deny Unsafe Code**: Enforce `unsafe_code = "deny"` declaratively in `Cargo.toml` under `[lints.rust]`.
+- **No Dead Code Suppression**: Do not add `#[allow(dead_code)]` workarounds across application code or modules; scope test helpers with `#[cfg(test)]`.
 - **Robust Error Handling**: Clean error handling via `thiserror` or idiomatic `Result` (no unhandled `unwrap()` or `expect()` in production code paths).
 - **Linter & Formatting**: Code must pass `cargo clippy --workspace --all-targets -- -D warnings` and `cargo fmt --all -- --check`.
 - **Cross-Platform Handling**: Never hardcode path separators or OS-specific assumptions.

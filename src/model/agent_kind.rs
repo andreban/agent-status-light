@@ -27,7 +27,6 @@ pub enum AgentKind {
 
 impl AgentKind {
     /// Returns the canonical string slice representation of the agent kind.
-    #[must_use]
     pub const fn as_str(&self) -> &'static str {
         match self {
             Self::Antigravity => AGENT_ANTIGRAVITY,
@@ -50,6 +49,12 @@ impl AsRef<str> for AgentKind {
     }
 }
 
+impl From<AgentKind> for &'static str {
+    fn from(kind: AgentKind) -> Self {
+        kind.as_str()
+    }
+}
+
 impl FromStr for AgentKind {
     type Err = Error;
 
@@ -61,6 +66,14 @@ impl FromStr for AgentKind {
             AGENT_CLI => Ok(Self::Cli),
             _ => Err(Error::InvalidAgentKind(s.to_string())),
         }
+    }
+}
+
+impl TryFrom<&str> for AgentKind {
+    type Error = Error;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
     }
 }
 

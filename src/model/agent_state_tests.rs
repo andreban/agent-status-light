@@ -23,6 +23,9 @@ fn test_agent_state_as_str_and_display() -> Result<()> {
     assert_eq!(AgentState::Off.to_string(), "off");
 
     assert_eq!(AgentState::Thinking.as_ref(), "thinking");
+
+    let s: &'static str = AgentState::Thinking.into();
+    assert_eq!(s, "thinking");
     Ok(())
 }
 
@@ -35,8 +38,17 @@ fn test_agent_state_from_str() -> Result<()> {
     assert_eq!(AgentState::from_str("error")?, AgentState::Error);
     assert_eq!(AgentState::from_str("off")?, AgentState::Off);
 
+    // TryFrom<&str>
+    assert_eq!(AgentState::try_from("thinking")?, AgentState::Thinking);
+    assert_eq!(AgentState::try_from("executing")?, AgentState::Executing);
+    assert_eq!(AgentState::try_from("waiting")?, AgentState::Waiting);
+    assert_eq!(AgentState::try_from("done")?, AgentState::Done);
+    assert_eq!(AgentState::try_from("error")?, AgentState::Error);
+    assert_eq!(AgentState::try_from("off")?, AgentState::Off);
+
     let err = AgentState::from_str("invalid").unwrap_err();
     assert!(matches!(err, Error::InvalidAgentState(_)));
+    assert!(AgentState::try_from("invalid").is_err());
     Ok(())
 }
 

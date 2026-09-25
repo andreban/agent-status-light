@@ -27,28 +27,28 @@ fn test_status_payload_serialization_matches_schema() -> Result<()> {
         "ec33ebf9-0cba-4100-8142-c61503f6c587",
     );
 
-    let json = payload.to_json()?;
+    let json = String::try_from(&payload)?;
     assert_eq!(
         json,
         r#"{"state":"thinking","agent":"antigravity","session_id":"ec33ebf9-0cba-4100-8142-c61503f6c587"}"#
     );
 
-    let json_line = payload.to_json_line()?;
-    assert_eq!(
-        json_line,
-        "{\"state\":\"thinking\",\"agent\":\"antigravity\",\"session_id\":\"ec33ebf9-0cba-4100-8142-c61503f6c587\"}\n"
-    );
+    let json_owned = String::try_from(payload)?;
+    assert_eq!(json_owned, json);
     Ok(())
 }
 
 #[test]
 fn test_status_payload_deserialization() -> Result<()> {
     let json = r#"{"state":"waiting","agent":"codex","session_id":"test-session"}"#;
-    let payload = StatusPayload::from_json(json)?;
+    let payload = StatusPayload::try_from(json)?;
 
     assert_eq!(payload.state, AgentState::Waiting);
     assert_eq!(payload.agent, AgentKind::Codex);
     assert_eq!(payload.session_id, "test-session");
+
+    let parsed: StatusPayload = json.parse()?;
+    assert_eq!(parsed, payload);
     Ok(())
 }
 
@@ -56,14 +56,15 @@ fn test_status_payload_deserialization() -> Result<()> {
 fn test_status_payload_invalid_deserialization() -> Result<()> {
     // Missing session_id
     let missing_field = r#"{"state":"thinking","agent":"antigravity"}"#;
-    assert!(StatusPayload::from_json(missing_field).is_err());
+    assert!(StatusPayload::try_from(missing_field).is_err());
+    assert!(missing_field.parse::<StatusPayload>().is_err());
 
     // Invalid state
     let invalid_state = r#"{"state":"dancing","agent":"antigravity","session_id":"s1"}"#;
-    assert!(StatusPayload::from_json(invalid_state).is_err());
+    assert!(StatusPayload::try_from(invalid_state).is_err());
 
     // Invalid agent
     let invalid_agent = r#"{"state":"thinking","agent":"unknown","session_id":"s1"}"#;
-    assert!(StatusPayload::from_json(invalid_agent).is_err());
+    assert!(StatusPayload::try_from(invalid_agent).is_err());
     Ok(())
 }

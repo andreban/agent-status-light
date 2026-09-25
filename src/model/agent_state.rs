@@ -33,7 +33,6 @@ pub enum AgentState {
 
 impl AgentState {
     /// Returns the canonical string slice representation of the state.
-    #[must_use]
     pub const fn as_str(&self) -> &'static str {
         match self {
             Self::Thinking => STATE_THINKING,
@@ -58,6 +57,12 @@ impl AsRef<str> for AgentState {
     }
 }
 
+impl From<AgentState> for &'static str {
+    fn from(state: AgentState) -> Self {
+        state.as_str()
+    }
+}
+
 impl FromStr for AgentState {
     type Err = Error;
 
@@ -71,6 +76,14 @@ impl FromStr for AgentState {
             STATE_OFF => Ok(Self::Off),
             _ => Err(Error::InvalidAgentState(s.to_string())),
         }
+    }
+}
+
+impl TryFrom<&str> for AgentState {
+    type Error = Error;
+
+    fn try_from(s: &str) -> Result<Self, Error> {
+        s.parse()
     }
 }
 

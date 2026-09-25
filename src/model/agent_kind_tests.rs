@@ -19,6 +19,9 @@ fn test_agent_kind_as_str_and_display() -> Result<()> {
     assert_eq!(AgentKind::Cli.to_string(), "cli");
 
     assert_eq!(AgentKind::Antigravity.as_ref(), "antigravity");
+
+    let s: &'static str = AgentKind::Antigravity.into();
+    assert_eq!(s, "antigravity");
     Ok(())
 }
 
@@ -29,8 +32,15 @@ fn test_agent_kind_from_str() -> Result<()> {
     assert_eq!(AgentKind::from_str("codex")?, AgentKind::Codex);
     assert_eq!(AgentKind::from_str("cli")?, AgentKind::Cli);
 
+    // TryFrom<&str>
+    assert_eq!(AgentKind::try_from("antigravity")?, AgentKind::Antigravity);
+    assert_eq!(AgentKind::try_from("claude")?, AgentKind::Claude);
+    assert_eq!(AgentKind::try_from("codex")?, AgentKind::Codex);
+    assert_eq!(AgentKind::try_from("cli")?, AgentKind::Cli);
+
     let err = AgentKind::from_str("unknown").unwrap_err();
     assert!(matches!(err, Error::InvalidAgentKind(_)));
+    assert!(AgentKind::try_from("unknown").is_err());
     Ok(())
 }
 

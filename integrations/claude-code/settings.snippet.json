@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "Notification": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ]
+  }
+}

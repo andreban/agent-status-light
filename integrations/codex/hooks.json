@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "tool_execute_before": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "permission_asked": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "stop": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ],
+    "turn_end": [
+      {
+        "command": "agent-status-light --port /dev/ttyACM0"
+      }
+    ]
+  }
+}

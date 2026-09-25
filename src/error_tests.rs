@@ -2,6 +2,7 @@ use std::error::Error as StdError;
 use std::io;
 
 use super::*;
+use crate::sink::SinkError;
 
 type Result<T> = core::result::Result<T, Box<dyn StdError>>;
 
@@ -30,5 +31,14 @@ fn test_error_from_io() -> Result<()> {
     let err: Error = io_err.into();
     assert!(matches!(err, Error::Io(_)));
     assert!(err.to_string().starts_with("I/O error:"));
+    Ok(())
+}
+
+#[test]
+fn test_error_from_sink_error() -> Result<()> {
+    let sink_err = SinkError::Timeout("connection timed out".to_string());
+    let err: Error = sink_err.into();
+    assert!(matches!(err, Error::Sink(_)));
+    assert!(err.to_string().starts_with("Sink error:"));
     Ok(())
 }

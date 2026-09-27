@@ -1,4 +1,5 @@
 use std::error::Error as StdError;
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -18,6 +19,7 @@ fn test_cli_default_parsing() -> Result<()> {
     assert_eq!(cli.url, None);
     assert_eq!(cli.agent, None);
     assert_eq!(cli.event, None);
+    assert_eq!(cli.log, None);
     assert_eq!(cli.command, None);
     Ok(())
 }
@@ -122,4 +124,11 @@ fn test_cli_invalid_state() {
 #[test]
 fn test_cli_invalid_sink() {
     assert!(Cli::try_parse_from(["agent-status-light", "--sink", "bluetooth"]).is_err());
+}
+
+#[test]
+fn test_cli_log_flag_parsing() -> Result<()> {
+    let cli = Cli::try_parse_from(["agent-status-light", "--log", "hooks.jsonl"])?;
+    assert_eq!(cli.log, Some(PathBuf::from("hooks.jsonl")));
+    Ok(())
 }

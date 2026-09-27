@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 use crate::model::{AgentKind, AgentState};
@@ -56,6 +58,14 @@ pub struct Cli {
     /// Hook event name override.
     #[arg(long, help = "Hook event name override")]
     pub event: Option<String>,
+
+    /// Diagnostic log file capturing raw hook payloads and outcomes.
+    #[arg(
+        long,
+        env = "ASL_LOG",
+        help = "Append a JSON line per invocation (raw payload, state, errors) to this file"
+    )]
+    pub log: Option<PathBuf>,
 
     /// Optional subcommand.
     #[command(subcommand)]

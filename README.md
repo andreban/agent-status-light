@@ -297,6 +297,24 @@ echo '{"hook_event_name":"Stop","session_id":"s-1"}' | agent-status-light --port
 
 ---
 
+## 7. Capturing Hook Payloads for Debugging
+
+If the light doesn't match what the agent is doing, record exactly what each hook sends by setting `ASL_LOG` (or passing `--log <PATH>`):
+
+```bash
+export ASL_LOG="$HOME/asl-hooks.jsonl"
+```
+
+Every invocation appends one JSON line with the arguments, the raw stdin payload, the resulting state, whether the sink write succeeded, and any error:
+
+```json
+{"timestamp_ms":1790000000000,"args":["--event","PreToolUse"],"input":"{\"conversationId\":\"c-1\",...}","state":"executing","sink_ok":true,"error":null}
+```
+
+Logging is best-effort: if the file can't be written, the hook still runs normally. Extract the raw payloads with `jq -r .input ~/asl-hooks.jsonl`.
+
+---
+
 ## License
 
 [Apache 2.0](LICENSE)

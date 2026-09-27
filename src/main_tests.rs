@@ -14,6 +14,7 @@ fn make_test_cli(sink: SinkType, port: Option<String>) -> Cli {
         timeout_ms: sink::DEFAULT_TIMEOUT_MS,
         agent: None,
         event: None,
+        log: None,
         command: None,
     }
 }

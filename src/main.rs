@@ -1,9 +1,11 @@
 mod cli;
 mod error;
 mod hook;
+mod invocation_log;
 mod model;
 mod sink;
 
+use std::env;
 use std::io::{self, IsTerminal};
 use std::process;
 use std::time::Duration;
@@ -12,6 +14,7 @@ use clap::Parser;
 
 use cli::{Cli, Command};
 use error::{Error, Result};
+use invocation_log::InvocationLog;
 use model::{AgentKind, AgentState, StatusPayload};
 use sink::{SerialSink, SinkError, SinkType, StatusSink, StdoutSink};
 
@@ -52,9 +55,7 @@ fn hook_response_json(payload: &StatusPayload) -> &'static str {
     }
 }
 
-fn run() -> Result<()> {
-    let cli = Cli::parse();
-
+fn run(cli: &Cli, log: &mut InvocationLog) -> Result<()> {
     let payload = match cli.command {
         Some(Command::Set { state }) => StatusPayload::with_default_session(state, AgentKind::Cli),
         None => {
@@ -64,25 +65,39 @@ fn run() -> Result<()> {
                 );
                 return Ok(());
             }
-
             let input = hook::read_stdin()?;
-            hook::parse_hook(&input, cli.agent, cli.event.as_deref())?
+            let parsed = hook::parse_hook(&input, cli.agent, cli.event.as_deref());
+            log.input = Some(input);
+            parsed?
         }
     };
+    log.state = Some(payload.state);
 
-    dispatch_sink(&cli, &payload)?;
+    dispatch_sink(cli, &payload)?;
+    log.sink_ok = true;
 
     // If executed as a hook with a non-stdout sink, output valid JSON to satisfy
     // agent hook runner contracts (e.g. Google Antigravity PreToolUse requires {"decision": "allow"}).
     if cli.command.is_none() && cli.sink != SinkType::Stdout {
         println!("{}", hook_response_json(&payload));
     }
-
     Ok(())
 }
 
 fn main() {
-    if let Err(err) = run() {
+    let cli = Cli::parse();
+    let mut log = InvocationLog::new(env::args().skip(1).collect());
+    let result = run(&cli, &mut log);
+
+    if let Some(path) = &cli.log {
+        if let Err(err) = &result {
+            log.error = Some(err.to_string());
+        }
+        // Diagnostic logging is best-effort and must never affect the hook outcome.
+        let _ = log.append_to(path);
+    }
+
+    if let Err(err) = result {
         eprintln!("Error: {err}");
         process::exit(1);
     }

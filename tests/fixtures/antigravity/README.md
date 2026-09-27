@@ -8,6 +8,7 @@ Real Antigravity hook payloads captured with `ASL_LOG` (2026-09-27, Antigravity 
   - `turn_approval_and_failed_tool.jsonl`: a partial turn that contains:
     - a user approval prompt for `git branch -a`: the ~12 s gap between PreToolUse and PostToolUse, with no event in between;
     - a `view_file` that failed inside Antigravity: PreToolUse with no PostToolUse (at `t_ms` 37976).
+  - `turn_cancelled.jsonl`: the end of the same turn, which the user cancelled during a model call. The last event is `PreInvocation`, and nothing follows it: no `Stop`, and no transcript entry.
 
 ## Observations
 
@@ -16,5 +17,6 @@ Real Antigravity hook payloads captured with `ASL_LOG` (2026-09-27, Antigravity 
 - `PostToolUse` carries the same `toolCall` as `PreToolUse`, plus `error` (`""` on success).
 - No hook event fires when Antigravity asks the user to approve a tool. A `{"decision":"allow"}` response to `PreToolUse` did not skip the approval prompt.
 - A tool that fails before it runs may produce no `PostToolUse`.
+- Cancelling a turn fires no event, so the last state stays until the next prompt.
 
-Not yet captured: `ask_question`, parallel tool calls, a tool that fails while running (non-empty `error`), a cancelled turn, file edits.
+Not yet captured: `ask_question`, parallel tool calls, a tool that fails while running (non-empty `error`), file edits.

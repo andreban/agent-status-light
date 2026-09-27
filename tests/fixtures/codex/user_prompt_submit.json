@@ -1,0 +1,10 @@
+{
+  "session_id": "01a0e20a-2082-72d1-8dba-8d68d24ce906",
+  "turn_id": "01a0e20a-c00e-7330-aa39-49a039854ea3",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "hook_event_name": "UserPromptSubmit",
+  "model": "gpt-6-astra",
+  "permission_mode": "default",
+  "prompt": "Example user prompt"
+}

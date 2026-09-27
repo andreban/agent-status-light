@@ -1,0 +1,15 @@
+{
+  "session_id": "01a0e20a-2082-72d1-8dba-8d68d24ce906",
+  "turn_id": "01a0e20c-bdae-7780-bc9b-e32189826abd",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-astra",
+  "permission_mode": "default",
+  "tool_name": "collaborationwait_agent",
+  "tool_input": {
+    "timeout_ms": 10000
+  },
+  "tool_response": "<redacted>",
+  "tool_use_id": "call_rg6EqUc19NuyNxFRS8dp4EWy"
+}

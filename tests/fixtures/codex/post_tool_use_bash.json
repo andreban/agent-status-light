@@ -1,0 +1,15 @@
+{
+  "session_id": "01a0e20a-2082-72d1-8dba-8d68d24ce906",
+  "turn_id": "01a0e20a-c00e-7330-aa39-49a039854ea3",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-astra",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "git ls-remote https://github.com/git/git HEAD"
+  },
+  "tool_response": "<redacted>",
+  "tool_use_id": "exec-7f3f39a8-58bc-4d28-8c2f-380760e8ff6a"
+}

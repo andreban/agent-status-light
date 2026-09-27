@@ -39,6 +39,8 @@ The reference firmware targets the **Pimoroni Tiny 2040** (Raspberry Pi RP2040) 
 
 For detailed hardware specifications, see [`firmware/tiny2040/README.md`](firmware/tiny2040/README.md).
 
+A **Raspberry Pi Pico** with one or more NeoPixels on GP16 is also supported; see [`firmware/pico-neopixel/README.md`](firmware/pico-neopixel/README.md).
+
 ---
 
 ## 2. Building & Installing the CLI

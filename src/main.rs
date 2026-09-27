@@ -13,36 +13,34 @@ use std::time::Duration;
 use clap::Parser;
 
 use cli::{Cli, Command};
-use error::{Error, Result};
+use error::Result;
 use hook::HookError;
 use invocation_log::InvocationLog;
 use model::{AgentKind, StatusPayload};
-use sink::{SerialSink, SinkError, SinkType, StatusSink, StdoutSink};
+use sink::{SinkError, SinkType};
 
 fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
     match cli.sink {
-        SinkType::Stdout => {
-            let mut sink = StdoutSink::new();
-            sink.send(payload)?;
-        }
+        SinkType::Stdout => sink::write_line(&mut io::stdout().lock(), payload)?,
         SinkType::Serial => {
-            let port = match cli.port.as_deref() {
-                Some(p) if !p.trim().is_empty() => p,
-                _ => {
-                    return Err(Error::Sink(SinkError::Connection(
+            let port = cli
+                .port
+                .as_deref()
+                .filter(|p| !p.trim().is_empty())
+                .ok_or_else(|| {
+                    SinkError::Connection(
                         "Serial port path must be specified via --port or ASL_PORT environment variable"
                             .to_string(),
-                    )));
-                }
-            };
-            let mut sink =
-                SerialSink::with_options(port, cli.baud, Duration::from_millis(cli.timeout_ms));
-            sink.send(payload)?;
+                    )
+                })?;
+            let timeout = Duration::from_millis(cli.timeout_ms);
+            sink::serial::send(port, cli.baud, timeout, payload)?;
         }
         SinkType::Http => {
-            return Err(Error::Sink(SinkError::Other(
+            return Err(SinkError::Other(
                 "HTTP sink is not yet implemented (scheduled for PR 5)".to_string(),
-            )));
+            )
+            .into());
         }
     }
     Ok(())

@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use super::hook_error::HookError;
+use super::HookError;
 use crate::model::{AgentKind, AgentState, DEFAULT_SESSION_ID, StatusPayload};
 
 pub const EVENT_PRE_INVOCATION: &str = "PreInvocation";

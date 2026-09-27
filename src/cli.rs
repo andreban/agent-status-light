@@ -3,7 +3,8 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 use crate::model::{AgentKind, AgentState};
-use crate::sink::{DEFAULT_BAUD, DEFAULT_SINK_STR, DEFAULT_TIMEOUT_MS, SinkType};
+use crate::sink::serial::DEFAULT_BAUD;
+use crate::sink::{DEFAULT_TIMEOUT_MS, SinkType};
 
 /// Command-line arguments and configuration for agent-status-light.
 #[derive(Debug, Clone, Parser, PartialEq, Eq)]
@@ -17,8 +18,9 @@ pub struct Cli {
     #[arg(
         long,
         env = "ASL_SINK",
-        default_value = DEFAULT_SINK_STR,
-        help = "Output transport sink (serial, http, stdout)"
+        value_enum,
+        default_value_t = SinkType::Serial,
+        help = "Output transport sink"
     )]
     pub sink: SinkType,
 

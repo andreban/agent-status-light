@@ -1,22 +1,51 @@
-mod serial;
-mod sink_error;
-mod sink_type;
-mod stdout;
+pub mod serial;
 
-pub use serial::{DEFAULT_BAUD, SerialSink};
-pub use sink_error::SinkError;
-pub use sink_type::{DEFAULT_SINK_STR, SinkType};
-pub use stdout::StdoutSink;
+use std::io::{self, Write};
+
+use thiserror::Error;
 
 use crate::model::StatusPayload;
 
-/// Default transport operation timeout in milliseconds.
+/// Default transport timeout in milliseconds.
 pub const DEFAULT_TIMEOUT_MS: u64 = 500;
 
-/// Status sink abstraction for transmitting agent state updates.
-pub trait StatusSink {
-    /// Sends a status payload to the target device or endpoint.
-    fn send(&mut self, payload: &StatusPayload) -> Result<(), SinkError>;
+/// Where status updates are sent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum SinkType {
+    /// USB serial device.
+    Serial,
+    /// HTTP endpoint (not implemented yet).
+    Http,
+    /// Standard output, for dry runs.
+    Stdout,
+}
+
+/// Errors sending a status update.
+#[derive(Debug, Error)]
+pub enum SinkError {
+    #[error("Sink I/O error: {0}")]
+    Io(#[from] io::Error),
+    #[error("Sink serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
+    #[error("Sink connection failed: {0}")]
+    Connection(String),
+    #[error("Sink error: {0}")]
+    Other(String),
+}
+
+impl From<serialport::Error> for SinkError {
+    fn from(err: serialport::Error) -> Self {
+        Self::Connection(err.to_string())
+    }
+}
+
+/// Writes a status update as one newline-terminated JSON line, then flushes.
+pub fn write_line<W: Write>(writer: &mut W, payload: &StatusPayload) -> Result<(), SinkError> {
+    let mut line = serde_json::to_vec(payload)?;
+    line.push(b'\n');
+    writer.write_all(&line)?;
+    writer.flush()?;
+    Ok(())
 }
 
 #[cfg(test)]

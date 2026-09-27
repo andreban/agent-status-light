@@ -1,14 +1,31 @@
 mod antigravity;
 mod claude;
-mod hook_error;
 
 use std::io::{self, Read};
 
 use serde_json::Value;
-
-pub use hook_error::HookError;
+use thiserror::Error;
 
 use crate::model::{AgentKind, StatusPayload};
+
+/// Errors reading or parsing a hook payload.
+#[derive(Debug, Error)]
+pub enum HookError {
+    #[error("I/O error reading hook input: {0}")]
+    Io(#[from] io::Error),
+    #[error("JSON error parsing hook payload: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("Hook payload is empty")]
+    EmptyPayload,
+    /// Hook invoked without `--agent`.
+    #[error("--agent is required for hook events")]
+    MissingAgent,
+    /// Agent kind that doesn't send hook events (the manual `set` command).
+    #[error("Agent does not send hook events")]
+    UnknownAgent,
+    #[error("Unknown hook event: {0}")]
+    UnknownEvent(String),
+}
 
 /// Parses a raw hook payload from `agent` into a status update. `Ok(None)` means the event
 /// doesn't change the light.

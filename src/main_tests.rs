@@ -9,7 +9,7 @@ fn make_test_cli(sink: SinkType, port: Option<String>) -> Cli {
     Cli {
         sink,
         port,
-        baud: sink::DEFAULT_BAUD,
+        baud: sink::serial::DEFAULT_BAUD,
         url: None,
         timeout_ms: sink::DEFAULT_TIMEOUT_MS,
         agent: None,
@@ -76,7 +76,7 @@ fn test_dispatch_sink_serial_invalid_port() -> Result<()> {
 #[test]
 fn test_exit_code_hook_mode_never_fails() {
     let hook = make_test_cli(SinkType::Serial, None);
-    let failure: crate::error::Result<()> = Err(Error::Sink(SinkError::Other("busy".to_string())));
+    let failure: crate::error::Result<()> = Err(SinkError::Other("busy".to_string()).into());
     assert_eq!(exit_code(&hook, &Ok(())), 0);
     assert_eq!(exit_code(&hook, &failure), 0);
 

@@ -1,5 +1,5 @@
 {
-  "artifactDirectoryPath": "C:/Users/user/.gemini/antigravity-cli/brain/5688ba31-9f36-4ab1-bc1c-7f02c6e4e3b5",
+  "artifactDirectoryPath": "C:/path/to/artifacts",
   "conversationId": "5688ba31-9f36-4ab1-bc1c-7f02c6e4e3b5",
   "error": "",
   "modelName": "gemini-3.8-flash-high",
@@ -7,20 +7,20 @@
   "toolCall": {
     "args": {
       "AllowMultiple": false,
-      "Description": "Add a deliberate failing test to SplitPane.test.tsx to capture test failure",
+      "Description": "<redacted>",
       "EndLine": 278,
-      "Instruction": "Insert a deliberately failing test case inside the Component Rendering describe block",
-      "ReplacementContent": "      expect(html).toContain('Top Pane');\n      expect(html).toContain('Bottom Pane');\n    });\n\n    it('demonstrates a deliberately failing test for capture', () => {\n      expect(true).toBe(false);\n    });\n  });\n});\n",
+      "Instruction": "<redacted>",
+      "ReplacementContent": "<redacted>",
       "StartLine": 274,
-      "TargetContent": "      expect(html).toContain('Top Pane');\n      expect(html).toContain('Bottom Pane');\n    });\n  });\n});",
-      "TargetFile": "C:\\Users\\user\\Projects\\example\\example-frontend\\src\\components\\SplitPane.test.tsx",
-      "toolAction": "Editing SplitPane.test.tsx",
-      "toolSummary": "Edit SplitPane.test.tsx"
+      "TargetContent": "<redacted>",
+      "TargetFile": "C:\\workspace\\project\\src\\file1.tsx",
+      "toolAction": "<redacted>",
+      "toolSummary": "<redacted>"
     },
     "name": "replace_file_content"
   },
-  "transcriptPath": "C:/Users/user/.gemini/antigravity-cli/brain/5688ba31-9f36-4ab1-bc1c-7f02c6e4e3b5/.system_generated/logs/transcript_full.jsonl",
+  "transcriptPath": "C:/path/to/transcript.jsonl",
   "workspacePaths": [
-    "C:/Users/user/Projects/example"
+    "C:/workspace/project"
   ]
 }

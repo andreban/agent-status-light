@@ -1,6 +1,14 @@
 # Antigravity hook fixtures
 
-Real Antigravity hook payloads captured with `ASL_LOG` (2026-09-27, Antigravity CLI, `gemini-3.8-flash-high`). The username and project paths have been replaced with placeholders.
+Real Antigravity hook payloads captured with `ASL_LOG` (2026-09-27, Antigravity CLI, `gemini-3.8-flash-high`).
+
+The payloads are scrubbed so they reveal nothing about the machine or projects they were captured on. Keys, types, event order and timing are unchanged.
+
+- Paths are replaced with fixed placeholders (`C:/workspace/project`, `C:/path/to/transcript.jsonl`), and file paths with `C:\workspace\project\src\fileN.ext`.
+- Commands are replaced with generic equivalents (`git status`, `npm test`, `gh issue view 1`, `python example.py`).
+- File contents, tool output, edit descriptions and error details are replaced with `<redacted>`. Errors that start with an exit code keep just that line (`Exit code 1`).
+
+## Files
 
 - `*.json`: one stdin payload per event and tool. The event name is not in the payload; it comes from the hook config (`--event`).
 - `*.jsonl`: ordered sequences of `{"event", "t_ms", "payload"}`, where `t_ms` is milliseconds since the first event.

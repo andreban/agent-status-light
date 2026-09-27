@@ -1,8 +1,8 @@
 {
   "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
-  "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed.jsonl",
-  "cwd": "C:\\Users\\user\\Projects\\agent-status-light",
-  "scratchpad_dir": "C:\\Users\\user\\AppData\\Local\\Temp\\claude\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed\\scratchpad",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "scratchpad_dir": "C:\\path\\to\\scratchpad",
   "prompt_id": "11d0d44b-0df7-443d-b0bc-8d1aff0ef2fc",
   "permission_mode": "auto",
   "effort": {
@@ -11,8 +11,8 @@
   "hook_event_name": "PreToolUse",
   "tool_name": "Bash",
   "tool_input": {
-    "command": "git checkout -q -b claude-fixtures && mkdir -p tests/fixtures/claude && python - <<'EOF'\nimport json,os\nrows=[json.loads(l) for l in open(os.path.expanduser('~/\u2026",
-    "description": "Create branch and write sanitized Claude fixtures"
+    "command": "python example.py",
+    "description": "<redacted>"
   },
   "tool_use_id": "toolu_01D1XeVHoHFK5Ke28cecmRbf"
 }

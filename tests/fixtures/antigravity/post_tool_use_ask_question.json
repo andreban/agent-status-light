@@ -1,5 +1,5 @@
 {
-  "artifactDirectoryPath": "C:/Users/user/.gemini/antigravity-cli/brain/5688ba31-9f36-4ab1-bc1c-7f02c6e4e3b5",
+  "artifactDirectoryPath": "C:/path/to/artifacts",
   "conversationId": "5688ba31-9f36-4ab1-bc1c-7f02c6e4e3b5",
   "error": "",
   "modelName": "gemini-3.8-flash-high",
@@ -17,13 +17,13 @@
           "question": "If you could instantly master one of these abilities right now, which would you choose?"
         }
       ],
-      "toolAction": "Asking a random question",
-      "toolSummary": "User random question"
+      "toolAction": "<redacted>",
+      "toolSummary": "<redacted>"
     },
     "name": "ask_question"
   },
-  "transcriptPath": "C:/Users/user/.gemini/antigravity-cli/brain/5688ba31-9f36-4ab1-bc1c-7f02c6e4e3b5/.system_generated/logs/transcript_full.jsonl",
+  "transcriptPath": "C:/path/to/transcript.jsonl",
   "workspacePaths": [
-    "C:/Users/user/Projects/example"
+    "C:/workspace/project"
   ]
 }

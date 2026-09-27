@@ -1,8 +1,8 @@
 {
   "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
-  "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed.jsonl",
-  "cwd": "C:\\Users\\user\\Projects\\agent-status-light\\tests\\fixtures\\antigravity",
-  "scratchpad_dir": "C:\\Users\\user\\AppData\\Local\\Temp\\claude\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed\\scratchpad",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "scratchpad_dir": "C:\\path\\to\\scratchpad",
   "prompt_id": "a9dfd839-ae86-44c7-a8dc-3a84b57b4616",
   "permission_mode": "auto",
   "effort": {
@@ -11,8 +11,8 @@
   "hook_event_name": "PreToolUse",
   "tool_name": "Write",
   "tool_input": {
-    "file_path": "C:\\Users\\user\\Projects\\agent-status-light\\tests\\fixtures\\antigravity\\README.md",
-    "content": "# Antigravity hook fixtures\n\nReal Antigravity hook payloads captured with `ASL_LOG` (2026-09-27, Antigravity CLI, `gemini-3.8-flash-high`). The username and pro\u2026"
+    "file_path": "C:\\workspace\\project\\src\\file10.md",
+    "content": "<redacted>"
   },
   "tool_use_id": "toolu_01656TDKhS8kqKSXGXBXQbxR"
 }

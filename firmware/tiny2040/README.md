@@ -28,6 +28,8 @@ Reference MicroPython firmware for the **Pimoroni Tiny 2040** (Raspberry Pi RP20
 
 Any other state, including the removed `thinking`, `executing` and `error`, turns the LED off. Re-sending the current state doesn't restart its animation.
 
+If the light has been `working` or `waiting` for **10 minutes without any message**, it switches to `done`. Some agents send no event when you cancel a turn or deny a prompt, so without this the light would stay blue or amber until your next prompt. Every hook event resets the timer, including repeats of the current state. The one legitimate long silence is a single slow tool, like a build, that runs longer than 10 minutes. Serial lines longer than 256 characters are discarded whole.
+
 The logic lives in `status_light.py`, which has no hardware dependencies. `main.py` only drives the LED and reads USB serial.
 
 ---

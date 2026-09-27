@@ -17,7 +17,7 @@ Connects AI coding agents (**Google Antigravity**, **Anthropic Claude Code**, an
 
 Some events can't be seen through hooks, so the light may lag in these cases:
 - Antigravity shows `working` during tool approval prompts.
-- Cancelling a turn or denying a prompt in Antigravity or Claude Code leaves the previous state until your next prompt.
+- Cancelling a turn or denying a prompt in Antigravity or Claude Code sends no event. The light keeps its previous state until your next prompt, or until the firmware gives up after 10 minutes without a message and switches to `done`.
 
 ---
 

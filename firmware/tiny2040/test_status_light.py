@@ -18,9 +18,12 @@ from status_light import (  # noqa: E402
     DARK,
     DONE,
     GREEN,
+    MAX_LINE_LENGTH,
     OFF,
+    STALE_AFTER_MS,
     WAITING,
     WORKING,
+    LineBuffer,
     StatusLight,
     parse_state,
 )
@@ -107,6 +110,78 @@ class TestStatusLight(unittest.TestCase):
         light.set_state(WAITING, period - 20)
         self.assertEqual(light.colour(30), AMBER)  # 50 ms after entering, across the wrap
         self.assertEqual(light.colour(130), DARK)  # 150 ms after entering
+
+
+class TestStaleFallback(unittest.TestCase):
+    def test_working_and_waiting_become_done_after_silence(self):
+        for state in (WORKING, WAITING):
+            light = StatusLight()
+            light.set_state(state, 0)
+            light.colour(STALE_AFTER_MS - 1)
+            self.assertEqual(light.state, state, state)
+            self.assertEqual(light.colour(STALE_AFTER_MS), GREEN, state)
+            self.assertEqual(light.state, DONE, state)
+
+    def test_any_message_resets_the_clock(self):
+        # A repeated `working` (every tool call) counts as activity.
+        light = StatusLight()
+        light.set_state(WORKING, 0)
+        light.set_state(WORKING, STALE_AFTER_MS - 1)
+        light.colour(STALE_AFTER_MS + 1)
+        self.assertEqual(light.state, WORKING)
+        light.colour(2 * STALE_AFTER_MS - 1)
+        self.assertEqual(light.state, DONE)
+
+    def test_done_and_off_never_expire(self):
+        for state in (DONE, OFF):
+            light = StatusLight()
+            light.set_state(state, 0)
+            light.colour(10 * STALE_AFTER_MS)
+            self.assertEqual(light.state, state)
+
+    def test_new_message_after_fallback(self):
+        light = StatusLight(stale_after_ms=1_000)
+        light.set_state(WAITING, 0)
+        light.colour(1_000)
+        self.assertEqual(light.state, DONE)
+        light.set_state(WORKING, 1_500)
+        self.assertEqual(light.colour(1_500), BLUE)
+
+    def test_stale_timer_across_tick_wraparound(self):
+        period = 1 << 30
+        light = StatusLight(ticks_diff=lambda a, b: (a - b) % period, stale_after_ms=1_000)
+        light.set_state(WORKING, period - 500)
+        light.colour(400)  # 900 ms later, across the wrap
+        self.assertEqual(light.state, WORKING)
+        light.colour(500)  # 1000 ms later
+        self.assertEqual(light.state, DONE)
+
+
+class TestLineBuffer(unittest.TestCase):
+    def feed(self, buffer, text):
+        return [line for line in (buffer.feed(c) for c in text) if line is not None]
+
+    def test_splits_lines_and_skips_blank_ones(self):
+        buffer = LineBuffer()
+        lines = self.feed(buffer, '{"a":1}\r\n\n  {"b":2}\n')
+        self.assertEqual(lines, ['{"a":1}', '{"b":2}'])
+
+    def test_partial_line_waits_for_line_break(self):
+        buffer = LineBuffer()
+        self.assertEqual(self.feed(buffer, '{"state":'), [])
+        self.assertEqual(self.feed(buffer, '"done"}\n'), ['{"state":"done"}'])
+
+    def test_overlong_line_is_discarded_whole(self):
+        # Without discarding the whole line, its tail would be read as a separate line.
+        buffer = LineBuffer()
+        overlong = "x" * (MAX_LINE_LENGTH + 5) + '{"state":"working"}'
+        lines = self.feed(buffer, overlong + '\n{"state":"done"}\n')
+        self.assertEqual(lines, ['{"state":"done"}'])
+
+    def test_line_at_max_length_is_kept(self):
+        buffer = LineBuffer()
+        line = "y" * MAX_LINE_LENGTH
+        self.assertEqual(self.feed(buffer, line + "\n"), [line])
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ import time
 
 from machine import PWM, Pin
 
-from status_light import StatusLight, parse_state
+from status_light import LineBuffer, StatusLight, parse_state
 
 # Pin mappings for Pimoroni Tiny 2040 onboard RGB LED
 PIN_RED = 18
@@ -78,7 +78,7 @@ def main():
     poll = select.poll()
     poll.register(sys.stdin, select.POLLIN)
 
-    input_buffer = ""
+    lines = LineBuffer()
 
     while True:
         # Drain all available serial bytes non-blocking
@@ -87,19 +87,12 @@ def main():
                 char = sys.stdin.read(1)
                 if not char:
                     break
-                if char in ("\n", "\r"):
-                    line = input_buffer.strip()
-                    input_buffer = ""
-                    if line:
-                        state = parse_state(line)
-                        # Ignore corrupted frames or partial fragments
-                        if state is not None:
-                            light.set_state(state, time.ticks_ms())
-                else:
-                    input_buffer += char
-                    # Prevent buffer bloat if no newline received
-                    if len(input_buffer) > 256:
-                        input_buffer = ""
+                line = lines.feed(char)
+                if line:
+                    state = parse_state(line)
+                    # Ignore corrupted frames or partial fragments
+                    if state is not None:
+                        light.set_state(state, time.ticks_ms())
             except Exception:
                 break
 

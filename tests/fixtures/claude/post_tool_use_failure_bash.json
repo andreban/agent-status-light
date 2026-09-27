@@ -1,0 +1,21 @@
+{
+  "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "scratchpad_dir": "C:\\path\\to\\scratchpad",
+  "prompt_id": "5f34fcdb-f7af-4b05-9055-e833e993b2c5",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUseFailure",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "python example.py",
+    "description": "<redacted>"
+  },
+  "tool_use_id": "toolu_01XjY7rxvCPugacWrxCoHtiw",
+  "error": "Exit code 1",
+  "is_interrupt": false,
+  "duration_ms": 259
+}

@@ -1,0 +1,7 @@
+{
+  "session_id": "01a0e20a-2082-72d1-8dba-8d68d24ce906",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "hook_event_name": "SessionEnd",
+  "reason": "other"
+}

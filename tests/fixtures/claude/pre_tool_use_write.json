@@ -1,0 +1,18 @@
+{
+  "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "scratchpad_dir": "C:\\path\\to\\scratchpad",
+  "prompt_id": "a9dfd839-ae86-44c7-a8dc-3a84b57b4616",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "C:\\workspace\\project\\src\\file10.md",
+    "content": "<redacted>"
+  },
+  "tool_use_id": "toolu_01656TDKhS8kqKSXGXBXQbxR"
+}

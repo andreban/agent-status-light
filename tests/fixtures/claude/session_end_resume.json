@@ -1,0 +1,9 @@
+{
+  "session_id": "3e6ab44d-d4a5-44e0-8afd-4f5d25040213",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "scratchpad_dir": "C:\\path\\to\\scratchpad",
+  "prompt_id": "caf99c0e-3033-46f1-acff-82595f23f1fd",
+  "hook_event_name": "SessionEnd",
+  "reason": "resume"
+}

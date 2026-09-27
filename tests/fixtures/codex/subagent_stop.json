@@ -1,0 +1,14 @@
+{
+  "session_id": "01a0e20a-2082-72d1-8dba-8d68d24ce906",
+  "turn_id": "01a0e20c-e0de-7ce3-b007-ce6b4303dfdb",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "agent_transcript_path": "C:\\path\\to\\agent-transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "hook_event_name": "SubagentStop",
+  "model": "gpt-6-astra",
+  "permission_mode": "default",
+  "stop_hook_active": false,
+  "agent_id": "01a0e20c-dc51-7420-aeb3-d7856713b435",
+  "agent_type": "default",
+  "last_assistant_message": "Example final assistant message."
+}

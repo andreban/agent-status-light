@@ -1,0 +1,16 @@
+{
+  "session_id": "01a0e20a-2082-72d1-8dba-8d68d24ce906",
+  "turn_id": "01a0e20c-bdae-7780-bc9b-e32189826abd",
+  "transcript_path": "C:\\path\\to\\transcript.jsonl",
+  "cwd": "C:\\workspace\\project",
+  "hook_event_name": "PreToolUse",
+  "model": "gpt-6-astra",
+  "permission_mode": "default",
+  "tool_name": "collaborationspawn_agent",
+  "tool_input": {
+    "task_name": "<redacted>",
+    "fork_turns": "all",
+    "message": "<redacted>"
+  },
+  "tool_use_id": "call_zKB02j1oADyktGJmIuxakjln"
+}

@@ -20,11 +20,12 @@ Unlike Antigravity, every payload names its own event in `hook_event_name`.
   - an answered `AskUserQuestion`;
   - an approved `Read` that then failed.
 - `interrupted_at_permission_prompt.jsonl`: the user pressed Esc while a permission prompt was showing.
+- `denied_permission_prompt.jsonl`: the user chose **No** at a permission prompt.
 
 ## Observations
 
 - **`PermissionRequest` is the timely "waiting" signal.** It fires about 150 ms after `PreToolUse`, when the prompt appears. `Notification` with `permission_prompt` arrives about 6 s later. `AskUserQuestion` also goes through `PermissionRequest`, so one mapping covers both approvals and questions. PostToolUse fires once the user approves or answers.
-- **An interrupt fires no hook.** After Esc at a permission prompt there was no PostToolUse, `PostToolUseFailure` or `Stop`; the next event was the user's next `UserPromptSubmit`. The light stays `waiting` until then.
+- **An interrupt or a denial fires no hook.** After Esc or **No** at a permission prompt there was no PostToolUse, `PostToolUseFailure` or `Stop`; the next event was the user's next `UserPromptSubmit`. The light stays `waiting` until then. The `PermissionDenied` event wasn't subscribed during capture, so whether it fires for a manual denial is untested.
 - **Read-only commands (e.g. `echo`) skip `PermissionRequest`**, even in `default` mode.
 - **`SessionEnd` carries a `reason`.** `prompt_input_exit` came from `/exit`. `resume` came from a fresh session that ended when the user resumed an older one, so it fired for a session that did nothing. `SessionEnd` from any session turns the light off, even if another session is busy.
 - **Parallel tool calls run their hooks concurrently.** The two PreToolUse hooks started 5 ms apart. The second failed to open the serial port ("Access is denied" on Windows), so that update was dropped (`"sink_ok": false`).
@@ -35,6 +36,5 @@ Unlike Antigravity, every payload names its own event in `hook_event_name`.
 - PreToolUse/PostToolUse pairs share a `tool_use_id`, so overlapping calls can be matched up.
 
 Not yet captured:
-- a denied permission prompt;
 - an interrupt while a tool is running, which may produce `PostToolUseFailure` with `is_interrupt: true`;
 - subagent events.

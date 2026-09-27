@@ -27,19 +27,37 @@ When an AI agent is active (thinking, running tools, waiting for user input, suc
 
 The project plan and architectural specification are documented in ZNotes note `75df5220-10d0-4e72-9a50-7ea1c6b86710`.
 
-### Confirmed MVP Architecture
+### Current Architecture
 - **Host Application**: Single, fast, stateless Rust CLI binary (`agent-status-light`). No background daemon process.
-- **Output Sinks**:
-  - **Direct Serial Sink**: Connects directly to the serial port on each hook event with `dtr=false, rts=false` (prevents MCU reboot), writes the state command, and closes. Port configured via CLI arg (`--port`) or env var (`ASL_PORT`).
-  - **Direct HTTP Sink**: Sends an HTTP request via `ureq` to a local network endpoint (Wi-Fi MCU or WLED).
-- **Wire Protocol**: Strictly simplex (host-to-device). Unified newline-delimited JSON payload (`{"state":"...","agent":"...","session_id":"..."}\n`) shared across both Serial and HTTP. No ping/pong handshake.
-- **First Firmware Target**: **Pimoroni Tiny 2040** (RP2040, native USB CDC, active-low onboard RGB LED on GP18/GP19/GP20).
-- **Deferred to v2**: Background daemon mode, MQTT broker transport, and multi-session store.
+- **States**: `working`, `waiting`, `done`, `off`. The event→state mapping per agent lives in `src/hook/` and is tested against captured payloads in `tests/fixtures/`.
+- **Hook Contract**:
+  - In hook mode the binary always exits 0 and never blocks the agent.
+  - It prints nothing to stdout, except the reply Antigravity expects.
+  - Every hook passes `--agent`; Antigravity also needs `--event`.
+- **Serial Sink**: Opens the serial port on each hook event, writes one line and closes it. It retries briefly when the port is busy (parallel tool calls run hooks concurrently). The port comes from `--port` or `ASL_PORT`.
+- **Wire Protocol**: Strictly simplex (host-to-device), newline-delimited JSON (`{"state":"...","agent":"...","session_id":"..."}\n`). No handshake.
+- **Firmware**: **Pimoroni Tiny 2040** (RP2040, native USB CDC, active-low RGB LED on GP18/GP19/GP20), in MicroPython.
+  - Hardware-free logic lives in `status_light.py`, which is tested on the desktop.
+  - The firmware turns `working`/`waiting` into `done` after 10 minutes without messages, because some agents send no event on cancel or deny.
+- **Planned**: an HTTP sink for Wi-Fi devices (#5).
+- **Not planned**: serial port auto-discovery; a background daemon; MQTT; multi-session coordination. Propose these only with a concrete need.
 
 
 ---
 
 ## 3. General Development Conventions
+
+### Simplicity First
+- Prefer the smallest design that works. Don't add abstractions, options, traits, trait impls or config for hypothetical future needs.
+- If a later feature needs something, add it then.
+
+### Evidence Over Assumptions
+- Base agent integrations on real behaviour, not guesses. Capture hook payloads with `--log`/`ASL_LOG`, save them as fixtures in `tests/fixtures/<agent>/`, and test mappings against them.
+- Check agent hook formats against the agent's official documentation.
+- Scrub fixtures before committing:
+  - paths become placeholders;
+  - commands become generic;
+  - prompts, file contents and tool output are redacted.
 
 ### Test Organization
 - **Sibling Test Files**: Externalize unit tests to a sibling `[file_name]_tests.rs` file using `#[path = "..."]` across all modules, keeping production code files concise and separated from test code.
@@ -72,10 +90,10 @@ The project plan and architectural specification are documented in ZNotes note `
 - **Strict Domain Types & Serde Over Permissive Parsers**: Use strong domain types and enums (e.g., `AgentState`, `AgentKind`, `SinkType`) with standard Serde attributes rather than accepting loose `String` fields with custom parsing routines. Avoid speculative aliases and over-tolerant deserializers.
 - **Binary Module Visibility**: In binary crates (`main.rs`), declare internal modules as private (`mod <name>;`) rather than `pub mod`. Avoid premature `pub use` re-exports before they are consumed to prevent compiler `unused_imports` warnings.
 - **No Horizontal ASCII Dividers**: Do not use horizontal ASCII divider comments (such as `// -------------------`) to partition code files. If a module accumulates distinct responsibilities, decompose it into smaller, domain-specific modules.
-- **Modularization & Single-Type Files**: Structure code into clean, domain-specific modules grouping related types. Aim for one file per strong type (e.g. `agent_state.rs`, `agent_kind.rs`, `payload.rs`) paired with sibling tests, rather than bundling multiple distinct types into a single large file.
-- **Named Constants over Magic Literals**: Avoid hardcoding inline magic strings or numbers for timeouts, baud rates, or default states. Define them as documented module-level constants (e.g., `pub const DEFAULT_BAUD: u32 = 115_200;`, `pub const DEFAULT_TIMEOUT_MS: u64 = 500;`).
+- **Modularization**: Group related code into domain-specific modules. Split a module when it grows large or mixes responsibilities, not by default; a small type can live alongside the code that uses it.
+- **Named Constants for Tunables**: Define timeouts, baud rates, retry counts and similar tunables as documented module-level constants (e.g., `pub const DEFAULT_BAUD: u32 = 115_200;`). Don't duplicate names that serde or clap derives already define (e.g. enum variant spellings) as string constants.
 - **Direct Imports over Fully Qualified Paths**: Import types, traits, and modules (e.g. `Display`, `FromStr`, `Error`) at the top of the file using standard `use` statements. Only use fully qualified paths when strictly necessary to resolve ambiguity or namespace collisions.
-- **Idiomatic Standard Conversion Traits over Ad-Hoc Methods**: Implement standard conversion traits (`From`, `TryFrom`, `FromStr`) instead of inventing ad-hoc helper methods (e.g., `to_json()`, `from_json()`, `to_xyz()`). Do not introduce redundant method wrappers that merely delegate to standard trait implementations.
+- **Conversions Only When Used**: Implement a standard trait (`From`, `TryFrom`, `FromStr`, `Display`, `AsRef`) only when code actually uses it; don't give every type a full set of conversions. Prefer serde and clap derives for string mappings. When a conversion is needed, use the standard trait rather than an ad-hoc method (e.g. `to_json()`).
 - **Avoid Speculative or Noisy Attributes**: Do not add `#[must_use]` or similar speculative attributes across application code, basic constructors, or getters unless specifically mandated by API requirements or project-wide linter configurations.
 
 ### Cargo & Dependency Management

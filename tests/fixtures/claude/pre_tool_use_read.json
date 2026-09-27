@@ -1,0 +1,18 @@
+{
+  "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
+  "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed.jsonl",
+  "cwd": "C:\\Users\\user\\Projects\\agent-status-light",
+  "scratchpad_dir": "C:\\Users\\user\\AppData\\Local\\Temp\\claude\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed\\scratchpad",
+  "prompt_id": "fe6f5517-d8ee-421c-8048-47e165a937a6",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "C:\\Users\\user\\.agent-status-light\\hooks.jsonl",
+    "offset": 150
+  },
+  "tool_use_id": "toolu_01KSXbaP2nUbty3eXPuKof4y"
+}

@@ -1,0 +1,32 @@
+{
+  "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
+  "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed.jsonl",
+  "cwd": "C:\\Users\\user\\Projects\\agent-status-light",
+  "scratchpad_dir": "C:\\Users\\user\\AppData\\Local\\Temp\\claude\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed\\scratchpad",
+  "prompt_id": "fe6f5517-d8ee-421c-8048-47e165a937a6",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PermissionRequest",
+  "tool_name": "AskUserQuestion",
+  "tool_input": {
+    "questions": [
+      {
+        "question": "Fixture capture: which light colour do you like best? (Any answer works; this only records the AskUserQuestion hook.)",
+        "header": "Capture",
+        "options": [
+          {
+            "label": "Amber",
+            "description": "The current waiting colour."
+          },
+          {
+            "label": "Cyan",
+            "description": "The current thinking colour."
+          }
+        ],
+        "multiSelect": false
+      }
+    ]
+  }
+}

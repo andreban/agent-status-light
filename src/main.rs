@@ -47,11 +47,32 @@ fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
     Ok(())
 }
 
-fn hook_response_json(payload: &StatusPayload) -> &'static str {
-    if payload.state == AgentState::Executing || payload.state == AgentState::Waiting {
-        "{\"decision\": \"allow\"}"
-    } else {
-        "{}"
+/// Reply Google Antigravity expects from a `PreToolUse` hook. It does not skip the user's approval prompt.
+const ANTIGRAVITY_PRE_TOOL_USE_RESPONSE: &str = r#"{"decision": "allow"}"#;
+
+/// Reply for Antigravity's other hook events.
+const ANTIGRAVITY_EMPTY_RESPONSE: &str = "{}";
+
+/// Returns the stdout reply the agent expects for this hook event, if any. Only Antigravity
+/// expects one; Claude Code and Codex parse hook stdout as decisions, so they must get nothing.
+fn hook_response(payload: &StatusPayload) -> Option<&'static str> {
+    if payload.agent != AgentKind::Antigravity {
+        return None;
+    }
+    // PreToolUse is the only Antigravity event mapped to `executing` or `waiting`.
+    Some(match payload.state {
+        AgentState::Executing | AgentState::Waiting => ANTIGRAVITY_PRE_TOOL_USE_RESPONSE,
+        _ => ANTIGRAVITY_EMPTY_RESPONSE,
+    })
+}
+
+/// Process exit code. Hook runs always exit 0, because agents treat a failing hook as an error
+/// or a blocking decision, and a status light must never affect the agent. Manual commands
+/// report failures.
+fn exit_code(cli: &Cli, result: &Result<()>) -> i32 {
+    match (&cli.command, result) {
+        (Some(_), Err(_)) => 1,
+        _ => 0,
     }
 }
 
@@ -73,14 +94,16 @@ fn run(cli: &Cli, log: &mut InvocationLog) -> Result<()> {
     };
     log.state = Some(payload.state);
 
+    // Reply before touching the sink, so a busy or missing device can't change what the agent sees.
+    if cli.command.is_none()
+        && cli.sink != SinkType::Stdout
+        && let Some(response) = hook_response(&payload)
+    {
+        println!("{response}");
+    }
+
     dispatch_sink(cli, &payload)?;
     log.sink_ok = true;
-
-    // If executed as a hook with a non-stdout sink, output valid JSON to satisfy
-    // agent hook runner contracts (e.g. Google Antigravity PreToolUse requires {"decision": "allow"}).
-    if cli.command.is_none() && cli.sink != SinkType::Stdout {
-        println!("{}", hook_response_json(&payload));
-    }
     Ok(())
 }
 
@@ -97,10 +120,10 @@ fn main() {
         let _ = log.append_to(path);
     }
 
-    if let Err(err) = result {
+    if let Err(err) = &result {
         eprintln!("Error: {err}");
-        process::exit(1);
     }
+    process::exit(exit_code(&cli, &result));
 }
 
 #[cfg(test)]

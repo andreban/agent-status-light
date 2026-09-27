@@ -74,22 +74,34 @@ fn test_dispatch_sink_serial_invalid_port() -> Result<()> {
 }
 
 #[test]
-fn test_hook_response_json() -> Result<()> {
-    let executing =
-        StatusPayload::with_default_session(AgentState::Executing, AgentKind::Antigravity);
-    assert_eq!(hook_response_json(&executing), "{\"decision\": \"allow\"}");
+fn test_hook_response_only_for_antigravity() {
+    let reply = Some(ANTIGRAVITY_PRE_TOOL_USE_RESPONSE);
+    let antigravity = |state| StatusPayload::with_default_session(state, AgentKind::Antigravity);
+    assert_eq!(hook_response(&antigravity(AgentState::Executing)), reply);
+    assert_eq!(hook_response(&antigravity(AgentState::Waiting)), reply);
+    let empty = Some(ANTIGRAVITY_EMPTY_RESPONSE);
+    assert_eq!(hook_response(&antigravity(AgentState::Thinking)), empty);
+    assert_eq!(hook_response(&antigravity(AgentState::Done)), empty);
 
-    let waiting = StatusPayload::with_default_session(AgentState::Waiting, AgentKind::Antigravity);
-    assert_eq!(hook_response_json(&waiting), "{\"decision\": \"allow\"}");
+    for agent in [AgentKind::Claude, AgentKind::Codex, AgentKind::Cli] {
+        for state in [AgentState::Executing, AgentState::Waiting, AgentState::Done] {
+            let payload = StatusPayload::with_default_session(state, agent);
+            assert_eq!(hook_response(&payload), None, "{agent} {state}");
+        }
+    }
+}
 
-    let thinking =
-        StatusPayload::with_default_session(AgentState::Thinking, AgentKind::Antigravity);
-    assert_eq!(hook_response_json(&thinking), "{}");
+#[test]
+fn test_exit_code_hook_mode_never_fails() {
+    let hook = make_test_cli(SinkType::Serial, None);
+    let failure: crate::error::Result<()> = Err(Error::Sink(SinkError::Other("busy".to_string())));
+    assert_eq!(exit_code(&hook, &Ok(())), 0);
+    assert_eq!(exit_code(&hook, &failure), 0);
 
-    let done = StatusPayload::with_default_session(AgentState::Done, AgentKind::Claude);
-    assert_eq!(hook_response_json(&done), "{}");
-
-    let error = StatusPayload::with_default_session(AgentState::Error, AgentKind::Codex);
-    assert_eq!(hook_response_json(&error), "{}");
-    Ok(())
+    let mut manual = make_test_cli(SinkType::Serial, None);
+    manual.command = Some(Command::Set {
+        state: AgentState::Done,
+    });
+    assert_eq!(exit_code(&manual, &Ok(())), 0);
+    assert_eq!(exit_code(&manual, &failure), 1);
 }

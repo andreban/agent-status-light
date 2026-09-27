@@ -17,16 +17,18 @@ Reference MicroPython firmware for the **Pimoroni Tiny 2040** (Raspberry Pi RP20
 
 ---
 
-## 2. Animation & State Mappings
+## 2. States
 
-| Agent State | Color / Pattern | Description |
+| State | Colour / Pattern | Meaning |
 | :--- | :--- | :--- |
-| **`thinking`** | Breathing Cyan | Smooth 2.0s sinusoidal brightness breathe |
-| **`executing`** | Pulsing Purple/Blue | Fast 0.8s pulsing animation |
-| **`waiting`** | Double-Blink Amber | Sharp attention double-flash alert |
-| **`done`** | Solid Green | Solid green until next interaction |
-| **`error`** | Flashing Red | 0.4s fast flashing warning alert |
-| **`off`** | All Off | All PWM channels disabled |
+| **`working`** | Blue, slow breathe (2.5 s, never fully dark) | Agent busy: reasoning or running tools |
+| **`waiting`** | Amber, double-blink | Agent needs you: permission prompt or question |
+| **`done`** | Green, solid | Turn finished, your turn |
+| **`off`** | Dark | Session ended |
+
+Any other state, including the removed `thinking`, `executing` and `error`, turns the LED off. Re-sending the current state doesn't restart its animation.
+
+The logic lives in `status_light.py`, which has no hardware dependencies. `main.py` only drives the LED and reads USB serial.
 
 ---
 
@@ -39,41 +41,45 @@ Reference MicroPython firmware for the **Pimoroni Tiny 2040** (Raspberry Pi RP20
    - [Official MicroPython RP2040 Downloads](https://micropython.org/download/RPI_PICO/) or Pimoroni Tiny 2040 UF2.
 4. Drag and drop the `.uf2` file onto the `RPI-RP2` drive. The board will automatically reboot running MicroPython.
 
-### Step 2: Copy `main.py` to the Device
+### Step 2: Copy the Firmware to the Device
 
-You can install `main.py` onto the microcontroller using [`mpremote`](https://docs.micropython.org/en/latest/reference/mpremote.html):
+Copy both `main.py` and `status_light.py` using [`mpremote`](https://docs.micropython.org/en/latest/reference/mpremote.html):
 
 ```bash
 # Install mpremote if not already installed
 pip install mpremote
 
-# Copy main.py to the root filesystem of the board
-mpremote cp firmware/tiny2040/main.py :main.py
+# Copy both files to the root filesystem of the board
+mpremote cp firmware/tiny2040/main.py :main.py + cp firmware/tiny2040/status_light.py :status_light.py
 
 # Soft-reboot the microcontroller to run main.py
 mpremote soft-reset
 ```
 
-Alternatively, open `firmware/tiny2040/main.py` in [Thonny IDE](https://thonny.org/) and select **File -> Save As -> MicroPython Device -> main.py**.
+Alternatively, open each file in [Thonny IDE](https://thonny.org/) and select **File -> Save As -> MicroPython Device**, keeping the same file names.
 
 ---
 
 ## 4. Testing & Verification
 
-Once `main.py` is running on the Tiny 2040, test it using `agent-status-light`:
+The state and animation logic runs on desktop Python too:
+
+```bash
+python firmware/tiny2040/test_status_light.py
+```
+
+Once the firmware is running on the Tiny 2040, send states over serial:
 
 ```bash
 # Replace /dev/ttyACM0 with your board's serial port (e.g. COM3 on Windows or /dev/cu.usbmodem* on macOS)
-agent-status-light --port /dev/ttyACM0 set thinking
-agent-status-light --port /dev/ttyACM0 set executing
+agent-status-light --port /dev/ttyACM0 set working
 agent-status-light --port /dev/ttyACM0 set waiting
 agent-status-light --port /dev/ttyACM0 set done
-agent-status-light --port /dev/ttyACM0 set error
 agent-status-light --port /dev/ttyACM0 set off
 ```
 
-Or test raw JSON directly over serial:
+Or send raw JSON directly:
 
 ```bash
-echo '{"state":"thinking","agent":"antigravity","session_id":"test"}' > /dev/ttyACM0
+echo '{"state":"working","agent":"cli","session_id":"test"}' > /dev/ttyACM0
 ```

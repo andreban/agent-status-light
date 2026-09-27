@@ -1,28 +1,22 @@
 """
-Pimoroni Tiny 2040 Reference Firmware for agent-status-light.
+Pimoroni Tiny 2040 firmware for agent-status-light.
 
-Connects the Pimoroni Tiny 2040 onboard active-low RGB LED
-(GP18 Red, GP19 Green, GP20 Blue) to incoming host status updates
-over USB CDC serial (115200 baud, newline-delimited JSON).
+Drives the onboard active-low RGB LED (GP18 red, GP19 green, GP20 blue) from
+status updates received over USB CDC serial (115200 baud, newline-delimited JSON):
 
-Wire Protocol:
-    {"state":"thinking","agent":"antigravity","session_id":"..."}\\n
+    {"state":"working","agent":"claude","session_id":"..."}\\n
 
-Supported States:
-    - thinking  : Breathing cyan
-    - executing : Pulsing purple/blue
-    - waiting   : Double-blink amber alert
-    - done      : Solid green
-    - error     : Flashing red alert
-    - off       : All LEDs off
+States and animations live in `status_light.py`, which must be copied to the
+board alongside this file.
 """
 
-import math
+import select
 import sys
 import time
-import ujson
-import uselect
+
 from machine import PWM, Pin
+
+from status_light import StatusLight, parse_state
 
 # Pin mappings for Pimoroni Tiny 2040 onboard RGB LED
 PIN_RED = 18
@@ -75,70 +69,14 @@ class RGBController:
         self.pwm_b.duty_u16(65535)
 
 
-class StatusLightApp:
-    """Manages agent state machine and autonomous animations."""
-
-    def __init__(self, led):
-        self.led = led
-        self.state = "off"
-        self.state_start_ms = time.ticks_ms()
-
-    def set_state(self, new_state):
-        """Transitions to a new state and resets animation timer."""
-        if self.state != new_state:
-            self.state = new_state
-            self.state_start_ms = time.ticks_ms()
-
-    def update(self):
-        """Calculates and renders current animation frame."""
-        now = time.ticks_ms()
-        elapsed = time.ticks_diff(now, self.state_start_ms)
-
-        if self.state == "thinking":
-            # 2.0s smooth sinusoidal breathing in cyan
-            phase = (elapsed % 2000) / 2000.0
-            brightness = 0.5 + 0.5 * math.sin(phase * 2.0 * math.pi - math.pi / 2.0)
-            self.led.set_rgb(0.0, brightness * 0.8, brightness * 1.0)
-
-        elif self.state == "executing":
-            # 0.8s fast pulsing pulse in purple/blue
-            phase = (elapsed % 800) / 800.0
-            brightness = 0.5 + 0.5 * math.sin(phase * 2.0 * math.pi - math.pi / 2.0)
-            self.led.set_rgb(brightness * 0.6, 0.0, brightness * 1.0)
-
-        elif self.state == "waiting":
-            # 1.5s attention double-blink in amber (Red + partial Green)
-            cycle = elapsed % 1500
-            if cycle < 100 or (250 <= cycle < 350):
-                self.led.set_rgb(1.0, 0.4, 0.0)
-            else:
-                self.led.off()
-
-        elif self.state == "done":
-            # Solid green until next interaction
-            self.led.set_rgb(0.0, 1.0, 0.0)
-
-        elif self.state == "error":
-            # 0.4s flashing red warning alert
-            cycle = elapsed % 400
-            if cycle < 200:
-                self.led.set_rgb(1.0, 0.0, 0.0)
-            else:
-                self.led.off()
-
-        else:
-            # "off" or unrecognized state
-            self.led.off()
-
-
 def main():
     """Main execution loop: non-blocking USB CDC line reader and animation driver."""
     led = RGBController()
-    app = StatusLightApp(led)
+    light = StatusLight(time.ticks_ms(), time.ticks_diff)
 
     # Configure non-blocking poll on sys.stdin
-    poll = uselect.poll()
-    poll.register(sys.stdin, uselect.POLLIN)
+    poll = select.poll()
+    poll.register(sys.stdin, select.POLLIN)
 
     input_buffer = ""
 
@@ -153,15 +91,10 @@ def main():
                     line = input_buffer.strip()
                     input_buffer = ""
                     if line:
-                        try:
-                            data = ujson.loads(line)
-                            if isinstance(data, dict):
-                                state = data.get("state")
-                                if state:
-                                    app.set_state(str(state).lower())
-                        except Exception:
-                            # Silently ignore corrupted frames or partial fragments
-                            pass
+                        state = parse_state(line)
+                        # Ignore corrupted frames or partial fragments
+                        if state is not None:
+                            light.set_state(state, time.ticks_ms())
                 else:
                     input_buffer += char
                     # Prevent buffer bloat if no newline received
@@ -171,7 +104,7 @@ def main():
                 break
 
         # Update animation frame
-        app.update()
+        led.set_rgb(*light.colour(time.ticks_ms()))
 
         # Yield to USB background tasks and maintain ~100 FPS
         time.sleep_ms(10)

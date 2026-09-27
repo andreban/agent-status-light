@@ -3,114 +3,161 @@ use std::error::Error as StdError;
 use serde_json::json;
 
 use super::*;
+use crate::hook::test_fixtures::{payload, sequence, shown};
 
 type Result<T> = core::result::Result<T, Box<dyn StdError>>;
 
+use AgentState::{Done, Off, Waiting, Working};
+
+/// Maps a captured sequence and returns what the light shows.
+fn shown_for(agent: AgentKind, dir: &str, file: &str) -> Result<Vec<AgentState>> {
+    let mut states = Vec::new();
+    for (_, value) in sequence(dir, file)? {
+        if let Some(status) = parse(&value, agent, None)? {
+            states.push(status.state);
+        }
+    }
+    Ok(shown(states))
+}
+
 #[test]
-fn test_claude_user_prompt_submit_and_post_tool_use() -> Result<()> {
-    let payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "UserPromptSubmit"
-    });
-
-    let status = parse_claude(&payload, None)?;
-    assert_eq!(status.state, AgentState::Thinking);
-    assert_eq!(status.agent, AgentKind::Claude);
-    assert_eq!(status.session_id, "claude-session-1");
-
-    let payload2 = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "PostToolUse"
-    });
-
-    let status2 = parse_claude(&payload2, None)?;
-    assert_eq!(status2.state, AgentState::Thinking);
+fn test_captured_claude_turns() -> Result<()> {
+    let cases = [
+        // Approvals and AskUserQuestion both show `waiting` until answered; the failing Read
+        // at the end stays `working`.
+        (
+            "permission_prompt_and_question.jsonl",
+            vec![
+                Done, Working, Waiting, Working, Waiting, Working, Waiting, Working,
+            ],
+        ),
+        ("parallel_tool_calls.jsonl", vec![Working]),
+        // Denials and interrupts fire nothing; the next prompt resumes `working` (#24).
+        (
+            "denied_permission_prompt.jsonl",
+            vec![Working, Waiting, Working],
+        ),
+        (
+            "interrupted_at_permission_prompt.jsonl",
+            vec![Working, Waiting, Working],
+        ),
+        ("interrupted_running_tool.jsonl", vec![Working]),
+    ];
+    for (file, expected) in cases {
+        assert_eq!(
+            shown_for(AgentKind::Claude, "claude", file)?,
+            expected,
+            "{file}"
+        );
+    }
     Ok(())
 }
 
 #[test]
-fn test_claude_pre_tool_use() -> Result<()> {
-    let payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "PreToolUse"
-    });
-
-    let status = parse_claude(&payload, None)?;
-    assert_eq!(status.state, AgentState::Executing);
-    assert_eq!(status.agent, AgentKind::Claude);
+fn test_captured_codex_turns() -> Result<()> {
+    let cases = [
+        // Codex fires Interrupt when the user denies a prompt or presses Esc.
+        (
+            "turn_approvals_and_denial.jsonl",
+            vec![
+                Working, Waiting, Working, Waiting, Working, Waiting, Working, Waiting, Done,
+            ],
+        ),
+        (
+            "turn_failing_command_and_interrupt.jsonl",
+            vec![Working, Waiting, Working, Waiting, Done],
+        ),
+        // Subagent start/stop don't change the light.
+        ("turn_subagent.jsonl", vec![Working, Done]),
+    ];
+    for (file, expected) in cases {
+        assert_eq!(
+            shown_for(AgentKind::Codex, "codex", file)?,
+            expected,
+            "{file}"
+        );
+    }
     Ok(())
 }
 
 #[test]
-fn test_claude_notifications() -> Result<()> {
-    let perm_payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "Notification",
-        "notification_type": "permission_prompt"
-    });
-
-    let status = parse_claude(&perm_payload, None)?;
-    assert_eq!(status.state, AgentState::Waiting);
-
-    let idle_payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "Notification",
-        "notification_type": "idle_prompt"
-    });
-
-    let status = parse_claude(&idle_payload, None)?;
-    assert_eq!(status.state, AgentState::Done);
+fn test_single_payloads() -> Result<()> {
+    let cases = [
+        (
+            AgentKind::Claude,
+            "claude",
+            "user_prompt_submit.json",
+            Some(Working),
+        ),
+        (
+            AgentKind::Claude,
+            "claude",
+            "post_tool_use_failure_bash.json",
+            Some(Working),
+        ),
+        (
+            AgentKind::Claude,
+            "claude",
+            "permission_request_ask_user_question.json",
+            Some(Waiting),
+        ),
+        (
+            AgentKind::Claude,
+            "claude",
+            "notification_permission_prompt.json",
+            None,
+        ),
+        (
+            AgentKind::Claude,
+            "claude",
+            "notification_idle_prompt.json",
+            None,
+        ),
+        (AgentKind::Claude, "claude", "stop.json", Some(Done)),
+        (
+            AgentKind::Claude,
+            "claude",
+            "session_end_prompt_input_exit.json",
+            Some(Off),
+        ),
+        (AgentKind::Codex, "codex", "session_start.json", None),
+        (
+            AgentKind::Codex,
+            "codex",
+            "permission_request_apply_patch.json",
+            Some(Waiting),
+        ),
+        (AgentKind::Codex, "codex", "interrupt.json", Some(Done)),
+        (AgentKind::Codex, "codex", "subagent_start.json", None),
+        (AgentKind::Codex, "codex", "session_end.json", Some(Off)),
+    ];
+    for (agent, dir, file, expected) in cases {
+        let status = parse(&payload(dir, file)?, agent, None)?;
+        assert_eq!(status.as_ref().map(|s| s.state), expected, "{file}");
+        if let Some(status) = status {
+            assert_eq!(status.agent, agent, "{file}");
+            assert_ne!(status.session_id, DEFAULT_SESSION_ID, "{file}");
+        }
+    }
     Ok(())
 }
 
 #[test]
-fn test_claude_stop_and_session_end() -> Result<()> {
-    let stop_payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "Stop"
-    });
-
-    let status = parse_claude(&stop_payload, None)?;
-    assert_eq!(status.state, AgentState::Done);
-
-    let end_payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "SessionEnd"
-    });
-
-    let status = parse_claude(&end_payload, None)?;
-    assert_eq!(status.state, AgentState::Off);
+fn test_event_override_and_errors() -> Result<()> {
+    let value = json!({ "session_id": "s1" });
+    let status = parse(&value, AgentKind::Claude, Some(EVENT_STOP))?.ok_or("expected a status")?;
+    assert_eq!(status.state, Done);
+    assert!(matches!(
+        parse(&value, AgentKind::Claude, None),
+        Err(HookError::UnknownEvent(_))
+    ));
+    assert!(matches!(
+        parse(
+            &json!({ "hook_event_name": "Bogus" }),
+            AgentKind::Codex,
+            None
+        ),
+        Err(HookError::UnknownEvent(_))
+    ));
     Ok(())
-}
-
-#[test]
-fn test_claude_post_tool_use_failure() -> Result<()> {
-    let payload = json!({
-        "session_id": "claude-session-1",
-        "hook_event_name": "PostToolUseFailure"
-    });
-
-    let status = parse_claude(&payload, None)?;
-    assert_eq!(status.state, AgentState::Error);
-    Ok(())
-}
-
-#[test]
-fn test_claude_default_session_id() -> Result<()> {
-    let payload = json!({
-        "hook_event_name": "Stop"
-    });
-
-    let status = parse_claude(&payload, None)?;
-    assert_eq!(status.session_id, DEFAULT_SESSION_ID);
-    Ok(())
-}
-
-#[test]
-fn test_claude_unknown_event() {
-    let payload = json!({
-        "hook_event_name": "NonExistentEvent"
-    });
-
-    assert!(parse_claude(&payload, None).is_err());
 }

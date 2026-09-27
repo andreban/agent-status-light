@@ -2,20 +2,22 @@
 
 Physical status lights for AI coding agents.
 
-Connects AI coding agents (**Google Antigravity**, **Anthropic Claude Code**, and **OpenAI Codex**) to physical hardware status lights via USB serial, providing real-time ambient feedback on your desk while agents are thinking, executing tools, waiting for approval, succeeding, or failing.
+Connects AI coding agents (**Google Antigravity**, **Anthropic Claude Code**, and **OpenAI Codex**) to physical hardware status lights via USB serial, providing real-time ambient feedback on your desk showing whether an agent is working, waiting for you, or finished.
 
 ---
 
 ## Visual Status Guide
 
-| Normalized State | MicroPython Reference Animation | Agent Lifecycle Meaning |
+| State | Light | Meaning |
 | :--- | :--- | :--- |
-| **`thinking`** | **Breathing Cyan** (2.0s sine cycle) | Agent processing prompt / reasoning |
-| **`executing`** | **Pulsing Purple/Blue** (0.8s pulse) | Agent executing a tool (terminal command, file edit) |
-| **`waiting`** | **Double-Blink Amber** (alert flash) | Needs user confirmation or input |
-| **`done`** | **Solid Green** (auto-off after 20s) | Task or turn complete; ready for user |
-| **`error`** | **Flashing Red** (0.4s warning alert) | Execution failure or command error |
-| **`off`** | **All LEDs Off** | Session closed or idle |
+| **`working`** | **Blue**, slow breathe | The agent is busy (reasoning or running tools) |
+| **`waiting`** | **Amber**, double-blink | The agent needs you: a permission prompt or a question |
+| **`done`** | **Green**, solid | The turn is finished; it's your turn |
+| **`off`** | Dark | The session ended |
+
+Some events can't be seen through hooks, so the light may lag in these cases:
+- Antigravity shows `working` during tool approval prompts.
+- Cancelling a turn or denying a prompt in Antigravity or Claude Code leaves the previous state until your next prompt.
 
 ---
 
@@ -83,7 +85,7 @@ Plug in your microcontroller and identify the serial port:
 1. **Option A: Explicit CLI Flag (`--port`)**
    Specify `--port <PATH>` directly in your command or agent hook configuration:
    ```bash
-   agent-status-light --port /dev/cu.usbmodem3301 set thinking
+   agent-status-light --port /dev/cu.usbmodem3301 set working
    ```
 
 2. **Option B: Environment Variable (`ASL_PORT`, Recommended)**
@@ -93,7 +95,7 @@ Plug in your microcontroller and identify the serial port:
    ```
    When `ASL_PORT` is set, you can omit the `--port` argument completely:
    ```bash
-   agent-status-light set thinking
+   agent-status-light set working
    ```
 
 ---
@@ -104,196 +106,62 @@ Test the physical status light directly from your terminal:
 
 ```bash
 # Trigger specific states manually (with ASL_PORT exported):
-agent-status-light set thinking
-agent-status-light set executing
+agent-status-light set working
 agent-status-light set waiting
 agent-status-light set done
-agent-status-light set error
 agent-status-light set off
 
 # Or with an explicit port flag:
-agent-status-light --port /dev/cu.usbmodem3301 set thinking
+agent-status-light --port /dev/cu.usbmodem3301 set working
 
 # Dry-run test to stdout without physical hardware:
-agent-status-light --sink stdout set thinking
+agent-status-light --sink stdout set working
 ```
 
 ---
 
 ## 5. Agent Setup Guides
 
+Each agent has a ready-made hook configuration in [`integrations/`](integrations/). Every command passes `--agent`, and replace `/dev/ttyACM0` with your serial port (e.g. `COM3`). If you export `ASL_PORT`, you can drop `--port` entirely.
+
+Hooks never fail or block the agent: `agent-status-light` always exits 0 in hook mode, and only prints the reply Antigravity expects.
+
 ### 5.1. Google Antigravity
 
-Antigravity executes lifecycle hooks defined in `.agents/hooks.json` in your workspace or globally in `~/.gemini/config/hooks.json`.
+Copy [`integrations/antigravity/hooks.json`](integrations/antigravity/hooks.json) to `~/.gemini/config/hooks.json` (global) or `.agents/hooks.json` (one workspace).
 
-1. Copy [`integrations/antigravity/hooks.json`](integrations/antigravity/hooks.json) to `.agents/hooks.json`:
-   ```bash
-   mkdir -p .agents
-   cp integrations/antigravity/hooks.json .agents/hooks.json
-   ```
-
-2. Configuration content:
-   ```json
-   {
-     "status-light": {
-       "PreInvocation": [
-         {
-           "type": "command",
-           "command": "agent-status-light --event PreInvocation --port /dev/ttyACM0"
-         }
-       ],
-       "PreToolUse": [
-         {
-           "matcher": "*",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "agent-status-light --event PreToolUse --port /dev/ttyACM0"
-             }
-           ]
-         }
-       ],
-       "PostToolUse": [
-         {
-           "matcher": "*",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "agent-status-light --event PostToolUse --port /dev/ttyACM0"
-             }
-           ]
-         }
-       ],
-       "PostInvocation": [
-         {
-           "type": "command",
-           "command": "agent-status-light --event PostInvocation --port /dev/ttyACM0"
-         }
-       ],
-       "Stop": [
-         {
-           "type": "command",
-           "command": "agent-status-light --event Stop --port /dev/ttyACM0"
-         }
-       ]
-     }
-   }
-   ```
-
-3. Replace `/dev/ttyACM0` with your serial port (e.g. `/dev/cu.usbmodem3301` or `COM3`).
-   *(If you export `ASL_PORT` in your shell profile, you can simplify the command to `"agent-status-light"`.)*
-
----
+Antigravity payloads don't name their event, so each command also passes `--event`. `PostInvocation` is deliberately left out: it fires after every model call, not at the end of a turn.
 
 ### 5.2. Anthropic Claude Code
 
-Claude Code supports lifecycle hooks configured in your global settings (`~/.claude/settings.json` or `.claude/settings.json` in your project).
+Merge the `hooks` object from [`integrations/claude-code/settings.snippet.json`](integrations/claude-code/settings.snippet.json) into `~/.claude/settings.json` (global) or `.claude/settings.json` (one project). If you already have hooks for these events, add the entries alongside them.
 
-1. Add the hook configuration from [`integrations/claude-code/settings.snippet.json`](integrations/claude-code/settings.snippet.json) into your `~/.claude/settings.json`:
-   ```json
-   {
-     "hooks": {
-       "UserPromptSubmit": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "PreToolUse": [
-         {
-           "matcher": "*",
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "PostToolUse": [
-         {
-           "matcher": "*",
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "Notification": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "Stop": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "SessionEnd": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ]
-     }
-   }
-   ```
-
-2. Replace `/dev/ttyACM0` with your serial port (or set `ASL_PORT` and use `"agent-status-light"`).
-3. When Claude Code submits a prompt, runs a tool, prompts for permission, or finishes a turn, `agent-status-light` parses the incoming hook JSON from stdin and updates the light immediately.
-
----
+`PermissionRequest` drives the amber light for both permission prompts and questions.
 
 ### 5.3. OpenAI Codex
 
-Codex lifecycle hooks are defined in `hooks.json` in your workspace.
+Copy [`integrations/codex/hooks.json`](integrations/codex/hooks.json) to `~/.codex/hooks.json` (global) or `<repo>/.codex/hooks.json`. Codex hooks use the same format as Claude Code.
 
-1. Copy [`integrations/codex/hooks.json`](integrations/codex/hooks.json) to your workspace `hooks.json`:
-   ```json
-   {
-     "hooks": {
-       "beforeSubmitPrompt": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "tool_execute_before": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "permission_asked": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "stop": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ],
-       "turn_end": [
-         {
-           "command": "agent-status-light --port /dev/ttyACM0"
-         }
-       ]
-     }
-   }
-   ```
-
-2. Replace `/dev/ttyACM0` with your serial port (or set `ASL_PORT` and use `"agent-status-light"`).
+Codex fires `Interrupt` when you deny a prompt or press Esc, so the light turns green immediately.
 
 ---
 
 ## 6. Testing Hook Payloads Manually
 
-You can simulate agent hook payloads from the command line by piping JSON into `agent-status-light`:
+Pipe a hook payload into `agent-status-light` to simulate an agent (with `ASL_PORT` exported, or add `--port`):
 
 ```bash
-# Simulate Antigravity PreInvocation (Thinking)
-echo '{"event":"PreInvocation","conversationId":"test-123"}' | agent-status-light --port /dev/cu.usbmodem3301
+# Antigravity PreToolUse (working); Antigravity needs --event
+echo '{"conversationId":"test-123","toolCall":{"name":"run_command"}}' | agent-status-light --agent antigravity --event PreToolUse
 
-# Simulate Antigravity PreToolUse (Executing)
-echo '{"event":"PreToolUse","toolCall":{"name":"run_command"}}' | agent-status-light --port /dev/cu.usbmodem3301
+# Claude Code permission prompt (waiting)
+echo '{"hook_event_name":"PermissionRequest","session_id":"s-1"}' | agent-status-light --agent claude
 
-# Simulate Claude Code Permission Prompt (Waiting)
-echo '{"hook_event_name":"Notification","notification_type":"permission_prompt","session_id":"s-1"}' | agent-status-light --port /dev/cu.usbmodem3301
-
-# Simulate Claude Code Stop (Done)
-echo '{"hook_event_name":"Stop","session_id":"s-1"}' | agent-status-light --port /dev/cu.usbmodem3301
+# Codex Stop (done)
+echo '{"hook_event_name":"Stop","session_id":"s-1"}' | agent-status-light --agent codex
 ```
 
-*(Note: If `ASL_PORT` is exported in your environment, the `--port` argument in the commands above can be omitted.)*
+Real captured payloads for every agent are in [`tests/fixtures/`](tests/fixtures/).
 
 ---
 
@@ -308,7 +176,7 @@ export ASL_LOG="$HOME/asl-hooks.jsonl"
 Every invocation appends one JSON line with the arguments, the raw stdin payload, the resulting state, whether the sink write succeeded, and any error:
 
 ```json
-{"timestamp_ms":1790000000000,"args":["--event","PreToolUse"],"input":"{\"conversationId\":\"c-1\",...}","state":"executing","sink_ok":true,"error":null}
+{"timestamp_ms":1790000000000,"args":["--agent","antigravity","--event","PreToolUse"],"input":"{\"conversationId\":\"c-1\",...}","state":"working","sink_ok":true,"error":null}
 ```
 
 Logging is best-effort: if the file can't be written, the hook still runs normally. Extract the raw payloads with `jq -r .input ~/asl-hooks.jsonl`.

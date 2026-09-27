@@ -54,7 +54,7 @@ fn test_append_to_writes_one_line_per_entry() -> Result<()> {
     let _ = fs::remove_file(&path);
 
     let mut first = InvocationLog::new(vec![]);
-    first.state = Some(AgentState::Thinking);
+    first.state = Some(AgentState::Working);
     first.append_to(&path)?;
 
     let mut second = InvocationLog::new(vec![]);
@@ -66,10 +66,7 @@ fn test_append_to_writes_one_line_per_entry() -> Result<()> {
 
     let lines: Vec<&str> = contents.lines().collect();
     assert_eq!(lines.len(), 2);
-    assert_eq!(
-        serde_json::from_str::<Value>(lines[0])?["state"],
-        "thinking"
-    );
+    assert_eq!(serde_json::from_str::<Value>(lines[0])?["state"], "working");
     assert_eq!(
         serde_json::from_str::<Value>(lines[1])?["error"],
         "Hook error: Unknown hook event: Foo"

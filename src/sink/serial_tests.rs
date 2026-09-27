@@ -26,7 +26,7 @@ fn test_serial_sink_with_options() -> Result<()> {
 
 #[test]
 fn test_write_payload_line() -> Result<()> {
-    let payload = StatusPayload::new(AgentState::Executing, AgentKind::Antigravity, "session-123");
+    let payload = StatusPayload::new(AgentState::Working, AgentKind::Antigravity, "session-123");
     let mut buffer = Vec::new();
 
     write_payload_line(&mut buffer, &payload)?;
@@ -42,11 +42,9 @@ fn test_write_payload_line() -> Result<()> {
 #[test]
 fn test_write_payload_line_all_states() -> Result<()> {
     let states = [
-        AgentState::Thinking,
-        AgentState::Executing,
+        AgentState::Working,
         AgentState::Waiting,
         AgentState::Done,
-        AgentState::Error,
         AgentState::Off,
     ];
 
@@ -68,7 +66,7 @@ fn test_write_payload_line_all_states() -> Result<()> {
 #[test]
 fn test_serial_sink_send_nonexistent_port() -> Result<()> {
     let mut sink = SerialSink::new("/dev/nonexistent_test_port_12345");
-    let payload = StatusPayload::with_default_session(AgentState::Thinking, AgentKind::Cli);
+    let payload = StatusPayload::with_default_session(AgentState::Working, AgentKind::Cli);
 
     let result = sink.send(&payload);
     assert!(result.is_err());

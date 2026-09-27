@@ -2,34 +2,79 @@
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "*",
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "*",
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
-    "Notification": [
+    "PostToolUseFailure": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "SessionEnd": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent claude --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ]
   }

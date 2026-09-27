@@ -1,28 +1,80 @@
 {
   "hooks": {
-    "beforeSubmitPrompt": [
+    "UserPromptSubmit": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
-    "tool_execute_before": [
+    "PreToolUse": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
-    "permission_asked": [
+    "PermissionRequest": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
-    "stop": [
+    "PostToolUse": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
       }
     ],
-    "turn_end": [
+    "Stop": [
       {
-        "command": "agent-status-light --port /dev/ttyACM0"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agent-status-light --agent codex --port /dev/ttyACM0",
+            "timeout": 3
+          }
+        ]
       }
     ]
   }

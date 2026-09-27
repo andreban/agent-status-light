@@ -17,8 +17,11 @@ pub enum HookError {
     #[error("Hook payload is empty")]
     EmptyPayload,
 
-    /// Agent runtime could not be detected from payload.
-    #[error("Could not determine agent type from payload")]
+    /// Hook invoked without `--agent`.
+    #[error("--agent is required for hook events")]
+    MissingAgent,
+    /// Agent kind that doesn't send hook events.
+    #[error("Agent does not send hook events")]
     UnknownAgent,
 
     /// Unrecognized hook event name.

@@ -6,14 +6,14 @@ type Result<T> = core::result::Result<T, Box<dyn StdError>>;
 
 #[test]
 fn test_status_payload_constructors() -> Result<()> {
-    let payload = StatusPayload::new(AgentState::Thinking, AgentKind::Antigravity, "session-123");
-    assert_eq!(payload.state, AgentState::Thinking);
+    let payload = StatusPayload::new(AgentState::Working, AgentKind::Antigravity, "session-123");
+    assert_eq!(payload.state, AgentState::Working);
     assert_eq!(payload.agent, AgentKind::Antigravity);
     assert_eq!(payload.session_id, "session-123");
 
     let default_payload =
-        StatusPayload::with_default_session(AgentState::Executing, AgentKind::Claude);
-    assert_eq!(default_payload.state, AgentState::Executing);
+        StatusPayload::with_default_session(AgentState::Working, AgentKind::Claude);
+    assert_eq!(default_payload.state, AgentState::Working);
     assert_eq!(default_payload.agent, AgentKind::Claude);
     assert_eq!(default_payload.session_id, DEFAULT_SESSION_ID);
     Ok(())
@@ -22,7 +22,7 @@ fn test_status_payload_constructors() -> Result<()> {
 #[test]
 fn test_status_payload_serialization_matches_schema() -> Result<()> {
     let payload = StatusPayload::new(
-        AgentState::Thinking,
+        AgentState::Working,
         AgentKind::Antigravity,
         "ec33ebf9-0cba-4100-8142-c61503f6c587",
     );
@@ -30,7 +30,7 @@ fn test_status_payload_serialization_matches_schema() -> Result<()> {
     let json = String::try_from(&payload)?;
     assert_eq!(
         json,
-        r#"{"state":"thinking","agent":"antigravity","session_id":"ec33ebf9-0cba-4100-8142-c61503f6c587"}"#
+        r#"{"state":"working","agent":"antigravity","session_id":"ec33ebf9-0cba-4100-8142-c61503f6c587"}"#
     );
 
     let json_owned = String::try_from(payload)?;
@@ -55,7 +55,7 @@ fn test_status_payload_deserialization() -> Result<()> {
 #[test]
 fn test_status_payload_invalid_deserialization() -> Result<()> {
     // Missing session_id
-    let missing_field = r#"{"state":"thinking","agent":"antigravity"}"#;
+    let missing_field = r#"{"state":"working","agent":"antigravity"}"#;
     assert!(StatusPayload::try_from(missing_field).is_err());
     assert!(missing_field.parse::<StatusPayload>().is_err());
 
@@ -64,7 +64,7 @@ fn test_status_payload_invalid_deserialization() -> Result<()> {
     assert!(StatusPayload::try_from(invalid_state).is_err());
 
     // Invalid agent
-    let invalid_agent = r#"{"state":"thinking","agent":"unknown","session_id":"s1"}"#;
+    let invalid_agent = r#"{"state":"working","agent":"unknown","session_id":"s1"}"#;
     assert!(StatusPayload::try_from(invalid_agent).is_err());
     Ok(())
 }

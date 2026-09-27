@@ -3,7 +3,7 @@
     "PreInvocation": [
       {
         "type": "command",
-        "command": "agent-status-light --event PreInvocation --port /dev/ttyACM0"
+        "command": "agent-status-light --agent antigravity --event PreInvocation --port /dev/ttyACM0"
       }
     ],
     "PreToolUse": [
@@ -12,7 +12,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "agent-status-light --event PreToolUse --port /dev/ttyACM0"
+            "command": "agent-status-light --agent antigravity --event PreToolUse --port /dev/ttyACM0"
           }
         ]
       }
@@ -23,21 +23,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "agent-status-light --event PostToolUse --port /dev/ttyACM0"
+            "command": "agent-status-light --agent antigravity --event PostToolUse --port /dev/ttyACM0"
           }
         ]
-      }
-    ],
-    "PostInvocation": [
-      {
-        "type": "command",
-        "command": "agent-status-light --event PostInvocation --port /dev/ttyACM0"
       }
     ],
     "Stop": [
       {
         "type": "command",
-        "command": "agent-status-light --event Stop --port /dev/ttyACM0"
+        "command": "agent-status-light --agent antigravity --event Stop --port /dev/ttyACM0"
       }
     ]
   }

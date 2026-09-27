@@ -10,10 +10,13 @@ fn test_hook_error_display() -> Result<()> {
     let empty_err = HookError::EmptyPayload;
     assert_eq!(empty_err.to_string(), "Hook payload is empty");
 
-    let agent_err = HookError::UnknownAgent;
     assert_eq!(
-        agent_err.to_string(),
-        "Could not determine agent type from payload"
+        HookError::MissingAgent.to_string(),
+        "--agent is required for hook events"
+    );
+    assert_eq!(
+        HookError::UnknownAgent.to_string(),
+        "Agent does not send hook events"
     );
 
     let event_err = HookError::UnknownEvent("custom_event".to_string());

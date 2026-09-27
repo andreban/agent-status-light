@@ -1,87 +1,42 @@
 mod antigravity;
 mod claude;
-mod codex;
 mod hook_error;
 
 use std::io::{self, Read};
 
 use serde_json::Value;
 
-pub use antigravity::parse_antigravity;
-pub use claude::parse_claude;
-pub use codex::parse_codex;
 pub use hook_error::HookError;
 
 use crate::model::{AgentKind, StatusPayload};
 
-/// Detects the originating agent kind from a hook payload value.
-pub fn detect_agent(value: &Value) -> Result<AgentKind, HookError> {
-    if value.get("conversationId").is_some() {
-        return Ok(AgentKind::Antigravity);
-    }
-
-    if value.get("hook_event_name").is_some() || value.get("notification_type").is_some() {
-        return Ok(AgentKind::Claude);
-    }
-
-    if value.get("beforeSubmitPrompt").is_some()
-        || value.get("tool_execute_before").is_some()
-        || value
-            .get("event")
-            .and_then(|v| v.as_str())
-            .is_some_and(|e| {
-                matches!(
-                    e,
-                    "beforeSubmitPrompt"
-                        | "tool_execute_before"
-                        | "permission_asked"
-                        | "turn_end"
-                        | "stop"
-                )
-            })
-    {
-        return Ok(AgentKind::Codex);
-    }
-
-    if value
-        .get("event")
-        .and_then(|v| v.as_str())
-        .is_some_and(|e| {
-            matches!(
-                e,
-                "UserPromptSubmit" | "PreToolUse" | "PostToolUse" | "SessionEnd"
-            )
-        })
-    {
-        return Ok(AgentKind::Claude);
-    }
-
-    Err(HookError::UnknownAgent)
-}
-
-/// Routes and parses raw hook JSON content into a normalized StatusPayload.
+/// Parses a raw hook payload from `agent` into a status update. `Ok(None)` means the event
+/// doesn't change the light.
 pub fn parse_hook(
     json: &str,
-    agent_override: Option<AgentKind>,
+    agent: AgentKind,
     event_override: Option<&str>,
-) -> Result<StatusPayload, HookError> {
+) -> Result<Option<StatusPayload>, HookError> {
     let trimmed = json.trim();
     if trimmed.is_empty() {
         return Err(HookError::EmptyPayload);
     }
-
     let value: Value = serde_json::from_str(trimmed)?;
-
-    let agent = match agent_override {
-        Some(a) => a,
-        None => detect_agent(&value)?,
-    };
-
     match agent {
-        AgentKind::Antigravity => parse_antigravity(&value, event_override),
-        AgentKind::Claude => parse_claude(&value, event_override),
-        AgentKind::Codex => parse_codex(&value, event_override),
+        AgentKind::Antigravity => antigravity::parse(&value, event_override),
+        // Codex hooks use the Claude Code payload schema.
+        AgentKind::Claude | AgentKind::Codex => claude::parse(&value, agent, event_override),
         AgentKind::Cli => Err(HookError::UnknownAgent),
+    }
+}
+
+/// Returns the stdout reply the agent expects from a hook, if any. It depends only on the
+/// command-line arguments, so it can be sent before anything else can fail. Only Antigravity
+/// expects a reply; Claude Code and Codex parse hook stdout as decisions, so they get nothing.
+pub fn response(agent: Option<AgentKind>, event: Option<&str>) -> Option<&'static str> {
+    match agent {
+        Some(AgentKind::Antigravity) => Some(antigravity::response(event)),
+        _ => None,
     }
 }
 
@@ -95,3 +50,6 @@ pub fn read_stdin() -> Result<String, HookError> {
 #[cfg(test)]
 #[path = "mod_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod test_fixtures;

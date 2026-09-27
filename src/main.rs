@@ -14,8 +14,9 @@ use clap::Parser;
 
 use cli::{Cli, Command};
 use error::{Error, Result};
+use hook::HookError;
 use invocation_log::InvocationLog;
-use model::{AgentKind, AgentState, StatusPayload};
+use model::{AgentKind, StatusPayload};
 use sink::{SerialSink, SinkError, SinkType, StatusSink, StdoutSink};
 
 fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
@@ -47,25 +48,6 @@ fn dispatch_sink(cli: &Cli, payload: &StatusPayload) -> Result<()> {
     Ok(())
 }
 
-/// Reply Google Antigravity expects from a `PreToolUse` hook. It does not skip the user's approval prompt.
-const ANTIGRAVITY_PRE_TOOL_USE_RESPONSE: &str = r#"{"decision": "allow"}"#;
-
-/// Reply for Antigravity's other hook events.
-const ANTIGRAVITY_EMPTY_RESPONSE: &str = "{}";
-
-/// Returns the stdout reply the agent expects for this hook event, if any. Only Antigravity
-/// expects one; Claude Code and Codex parse hook stdout as decisions, so they must get nothing.
-fn hook_response(payload: &StatusPayload) -> Option<&'static str> {
-    if payload.agent != AgentKind::Antigravity {
-        return None;
-    }
-    // PreToolUse is the only Antigravity event mapped to `executing` or `waiting`.
-    Some(match payload.state {
-        AgentState::Executing | AgentState::Waiting => ANTIGRAVITY_PRE_TOOL_USE_RESPONSE,
-        _ => ANTIGRAVITY_EMPTY_RESPONSE,
-    })
-}
-
 /// Process exit code. Hook runs always exit 0, because agents treat a failing hook as an error
 /// or a blocking decision, and a status light must never affect the agent. Manual commands
 /// report failures.
@@ -86,21 +68,24 @@ fn run(cli: &Cli, log: &mut InvocationLog) -> Result<()> {
                 );
                 return Ok(());
             }
+            // Reply first, so nothing that fails later can change what the agent sees.
+            if cli.sink != SinkType::Stdout
+                && let Some(response) = hook::response(cli.agent, cli.event.as_deref())
+            {
+                println!("{response}");
+            }
+            let agent = cli.agent.ok_or(HookError::MissingAgent)?;
             let input = hook::read_stdin()?;
-            let parsed = hook::parse_hook(&input, cli.agent, cli.event.as_deref());
+            let parsed = hook::parse_hook(&input, agent, cli.event.as_deref());
             log.input = Some(input);
-            parsed?
+            match parsed? {
+                Some(payload) => payload,
+                // The event doesn't change the light.
+                None => return Ok(()),
+            }
         }
     };
     log.state = Some(payload.state);
-
-    // Reply before touching the sink, so a busy or missing device can't change what the agent sees.
-    if cli.command.is_none()
-        && cli.sink != SinkType::Stdout
-        && let Some(response) = hook_response(&payload)
-    {
-        println!("{response}");
-    }
 
     dispatch_sink(cli, &payload)?;
     log.sink_ok = true;

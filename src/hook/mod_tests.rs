@@ -1,75 +1,71 @@
 use std::error::Error as StdError;
 
-use serde_json::json;
-
 use super::*;
 use crate::model::AgentState;
 
 type Result<T> = core::result::Result<T, Box<dyn StdError>>;
 
 #[test]
-fn test_detect_agent() -> Result<()> {
-    let agy = json!({ "conversationId": "c1", "invocationNum": 1 });
-    assert_eq!(detect_agent(&agy)?, AgentKind::Antigravity);
+fn test_parse_hook_routes_by_agent() -> Result<()> {
+    let status = parse_hook(
+        r#"{"conversationId":"c-1"}"#,
+        AgentKind::Antigravity,
+        Some("Stop"),
+    )?
+    .ok_or("expected a status")?;
+    assert_eq!(
+        (status.agent, status.state),
+        (AgentKind::Antigravity, AgentState::Done)
+    );
+    assert_eq!(status.session_id, "c-1");
 
-    let claude = json!({ "session_id": "s1", "hook_event_name": "PreToolUse" });
-    assert_eq!(detect_agent(&claude)?, AgentKind::Claude);
+    let claude_style = r#"{"session_id":"s-1","hook_event_name":"PermissionRequest"}"#;
+    for agent in [AgentKind::Claude, AgentKind::Codex] {
+        let status = parse_hook(claude_style, agent, None)?.ok_or("expected a status")?;
+        assert_eq!((status.agent, status.state), (agent, AgentState::Waiting));
+    }
+    Ok(())
+}
 
-    let codex = json!({ "session_id": "s1", "beforeSubmitPrompt": {} });
-    assert_eq!(detect_agent(&codex)?, AgentKind::Codex);
+#[test]
+fn test_parse_hook_ignored_event() -> Result<()> {
+    let json = r#"{"session_id":"s-1","hook_event_name":"Notification"}"#;
+    assert_eq!(parse_hook(json, AgentKind::Claude, None)?, None);
+    Ok(())
+}
 
-    let unknown = json!({ "foo": "bar" });
+#[test]
+fn test_parse_hook_errors() {
     assert!(matches!(
-        detect_agent(&unknown),
-        Err(HookError::UnknownAgent)
-    ));
-    Ok(())
-}
-
-#[test]
-fn test_parse_hook_auto_detected() -> Result<()> {
-    let agy_json = r#"{"conversationId": "c-100", "invocationNum": 2}"#;
-    let status = parse_hook(agy_json, None, None)?;
-    assert_eq!(status.agent, AgentKind::Antigravity);
-    assert_eq!(status.state, AgentState::Thinking);
-    assert_eq!(status.session_id, "c-100");
-
-    let claude_json = r#"{"session_id": "cl-200", "hook_event_name": "PreToolUse"}"#;
-    let status = parse_hook(claude_json, None, None)?;
-    assert_eq!(status.agent, AgentKind::Claude);
-    assert_eq!(status.state, AgentState::Executing);
-    assert_eq!(status.session_id, "cl-200");
-
-    let codex_json = r#"{"session_id": "cx-300", "event": "stop"}"#;
-    let status = parse_hook(codex_json, None, None)?;
-    assert_eq!(status.agent, AgentKind::Codex);
-    assert_eq!(status.state, AgentState::Done);
-    assert_eq!(status.session_id, "cx-300");
-    Ok(())
-}
-
-#[test]
-fn test_parse_hook_overrides() -> Result<()> {
-    let payload = r#"{"session_id": "custom-s"}"#;
-    let status = parse_hook(payload, Some(AgentKind::Claude), Some("Stop"))?;
-    assert_eq!(status.agent, AgentKind::Claude);
-    assert_eq!(status.state, AgentState::Done);
-    assert_eq!(status.session_id, "custom-s");
-    Ok(())
-}
-
-#[test]
-fn test_parse_hook_empty_and_invalid() {
-    assert!(matches!(
-        parse_hook("", None, None),
+        parse_hook("  ", AgentKind::Claude, None),
         Err(HookError::EmptyPayload)
     ));
     assert!(matches!(
-        parse_hook("   ", None, None),
-        Err(HookError::EmptyPayload)
-    ));
-    assert!(matches!(
-        parse_hook("{not-json}", None, None),
+        parse_hook("{not-json}", AgentKind::Claude, None),
         Err(HookError::Json(_))
     ));
+    assert!(matches!(
+        parse_hook("{}", AgentKind::Cli, None),
+        Err(HookError::UnknownAgent)
+    ));
+}
+
+#[test]
+fn test_response_only_for_antigravity() {
+    assert_eq!(
+        response(Some(AgentKind::Antigravity), Some("PreToolUse")),
+        Some(r#"{"decision": "allow"}"#)
+    );
+    assert_eq!(
+        response(Some(AgentKind::Antigravity), Some("Stop")),
+        Some("{}")
+    );
+    for agent in [
+        Some(AgentKind::Claude),
+        Some(AgentKind::Codex),
+        Some(AgentKind::Cli),
+        None,
+    ] {
+        assert_eq!(response(agent, Some("PreToolUse")), None, "{agent:?}");
+    }
 }

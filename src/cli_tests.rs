@@ -66,53 +66,19 @@ fn test_cli_agent_and_event_flags() -> Result<()> {
 
 #[test]
 fn test_cli_subcommand_set() -> Result<()> {
-    let cli = Cli::try_parse_from(["agent-status-light", "set", "thinking"])?;
-    assert_eq!(
-        cli.command,
-        Some(Command::Set {
-            state: AgentState::Thinking
-        })
-    );
-
-    let cli = Cli::try_parse_from(["agent-status-light", "set", "executing"])?;
-    assert_eq!(
-        cli.command,
-        Some(Command::Set {
-            state: AgentState::Executing
-        })
-    );
-
-    let cli = Cli::try_parse_from(["agent-status-light", "set", "done"])?;
-    assert_eq!(
-        cli.command,
-        Some(Command::Set {
-            state: AgentState::Done
-        })
-    );
-
-    let cli = Cli::try_parse_from(["agent-status-light", "set", "error"])?;
-    assert_eq!(
-        cli.command,
-        Some(Command::Set {
-            state: AgentState::Error
-        })
-    );
-
-    let cli = Cli::try_parse_from(["agent-status-light", "set", "off"])?;
-    assert_eq!(
-        cli.command,
-        Some(Command::Set {
-            state: AgentState::Off
-        })
-    );
-
-    let cli = Cli::try_parse_from(["agent-status-light", "set", "waiting"])?;
-    assert_eq!(
-        cli.command,
-        Some(Command::Set {
-            state: AgentState::Waiting
-        })
-    );
+    let states = [
+        ("working", AgentState::Working),
+        ("waiting", AgentState::Waiting),
+        ("done", AgentState::Done),
+        ("off", AgentState::Off),
+    ];
+    for (name, state) in states {
+        let cli = Cli::try_parse_from(["agent-status-light", "set", name])?;
+        assert_eq!(cli.command, Some(Command::Set { state }));
+    }
+    for removed in ["thinking", "executing", "error"] {
+        assert!(Cli::try_parse_from(["agent-status-light", "set", removed]).is_err());
+    }
     Ok(())
 }
 

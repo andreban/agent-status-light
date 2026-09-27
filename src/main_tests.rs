@@ -22,7 +22,7 @@ fn make_test_cli(sink: SinkType, port: Option<String>) -> Cli {
 #[test]
 fn test_dispatch_sink_stdout() -> Result<()> {
     let cli = make_test_cli(SinkType::Stdout, None);
-    let payload = StatusPayload::with_default_session(AgentState::Thinking, AgentKind::Antigravity);
+    let payload = StatusPayload::with_default_session(AgentState::Working, AgentKind::Antigravity);
 
     assert!(dispatch_sink(&cli, &payload).is_ok());
     Ok(())
@@ -31,7 +31,7 @@ fn test_dispatch_sink_stdout() -> Result<()> {
 #[test]
 fn test_dispatch_sink_http_unimplemented() -> Result<()> {
     let cli = make_test_cli(SinkType::Http, None);
-    let payload = StatusPayload::with_default_session(AgentState::Executing, AgentKind::Claude);
+    let payload = StatusPayload::with_default_session(AgentState::Working, AgentKind::Claude);
 
     let result = dispatch_sink(&cli, &payload);
     assert!(result.is_err());
@@ -71,24 +71,6 @@ fn test_dispatch_sink_serial_invalid_port() -> Result<()> {
     let err_str = result.unwrap_err().to_string();
     assert!(err_str.contains("Sink connection failed"));
     Ok(())
-}
-
-#[test]
-fn test_hook_response_only_for_antigravity() {
-    let reply = Some(ANTIGRAVITY_PRE_TOOL_USE_RESPONSE);
-    let antigravity = |state| StatusPayload::with_default_session(state, AgentKind::Antigravity);
-    assert_eq!(hook_response(&antigravity(AgentState::Executing)), reply);
-    assert_eq!(hook_response(&antigravity(AgentState::Waiting)), reply);
-    let empty = Some(ANTIGRAVITY_EMPTY_RESPONSE);
-    assert_eq!(hook_response(&antigravity(AgentState::Thinking)), empty);
-    assert_eq!(hook_response(&antigravity(AgentState::Done)), empty);
-
-    for agent in [AgentKind::Claude, AgentKind::Codex, AgentKind::Cli] {
-        for state in [AgentState::Executing, AgentState::Waiting, AgentState::Done] {
-            let payload = StatusPayload::with_default_session(state, agent);
-            assert_eq!(hook_response(&payload), None, "{agent} {state}");
-        }
-    }
 }
 
 #[test]

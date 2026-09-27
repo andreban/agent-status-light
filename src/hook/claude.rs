@@ -7,49 +7,60 @@ pub const EVENT_USER_PROMPT_SUBMIT: &str = "UserPromptSubmit";
 pub const EVENT_PRE_TOOL_USE: &str = "PreToolUse";
 pub const EVENT_POST_TOOL_USE: &str = "PostToolUse";
 pub const EVENT_POST_TOOL_USE_FAILURE: &str = "PostToolUseFailure";
+pub const EVENT_PERMISSION_REQUEST: &str = "PermissionRequest";
+pub const EVENT_PERMISSION_DENIED: &str = "PermissionDenied";
 pub const EVENT_NOTIFICATION: &str = "Notification";
 pub const EVENT_STOP: &str = "Stop";
+pub const EVENT_INTERRUPT: &str = "Interrupt";
+pub const EVENT_SESSION_START: &str = "SessionStart";
 pub const EVENT_SESSION_END: &str = "SessionEnd";
+pub const EVENT_SUBAGENT_START: &str = "SubagentStart";
+pub const EVENT_SUBAGENT_STOP: &str = "SubagentStop";
+pub const EVENT_PRE_COMPACT: &str = "PreCompact";
+pub const EVENT_POST_COMPACT: &str = "PostCompact";
 
-pub const NOTIFICATION_PERMISSION_PROMPT: &str = "permission_prompt";
-pub const NOTIFICATION_IDLE_PROMPT: &str = "idle_prompt";
-
-/// Parses an Anthropic Claude Code hook payload into a normalized StatusPayload.
-pub fn parse_claude(
+/// Parses a Claude Code or Codex hook payload; both agents use the same schema, and name the
+/// event in `hook_event_name`. Returns `None` for events that don't change the light.
+pub fn parse(
     value: &Value,
+    agent: AgentKind,
     event_override: Option<&str>,
-) -> Result<StatusPayload, HookError> {
-    let session_id = value
-        .get("session_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or(DEFAULT_SESSION_ID);
-
-    let event = event_override
-        .or_else(|| value.get("hook_event_name").and_then(|v| v.as_str()))
-        .or_else(|| value.get("event").and_then(|v| v.as_str()));
-
-    let notification_type = value.get("notification_type").and_then(|v| v.as_str());
-
+) -> Result<Option<StatusPayload>, HookError> {
+    let event = event_override.or_else(|| value.get("hook_event_name").and_then(Value::as_str));
     let state = match event {
-        Some(EVENT_USER_PROMPT_SUBMIT) | Some(EVENT_POST_TOOL_USE) => AgentState::Thinking,
-        Some(EVENT_PRE_TOOL_USE) => AgentState::Executing,
-        Some(EVENT_NOTIFICATION) => match notification_type {
-            Some(NOTIFICATION_PERMISSION_PROMPT) => AgentState::Waiting,
-            Some(NOTIFICATION_IDLE_PROMPT) => AgentState::Done,
-            _ => AgentState::Waiting,
-        },
-        Some(EVENT_STOP) => AgentState::Done,
+        // A failed command doesn't stop the agent, so it stays `working`.
+        Some(
+            EVENT_USER_PROMPT_SUBMIT
+            | EVENT_PRE_TOOL_USE
+            | EVENT_POST_TOOL_USE
+            | EVENT_POST_TOOL_USE_FAILURE,
+        ) => AgentState::Working,
+        // Fires when a permission prompt or a question is shown.
+        Some(EVENT_PERMISSION_REQUEST) => AgentState::Waiting,
+        // Codex fires `Interrupt` when the user denies a prompt or presses Esc.
+        Some(EVENT_STOP | EVENT_INTERRUPT) => AgentState::Done,
         Some(EVENT_SESSION_END) => AgentState::Off,
-        Some(EVENT_POST_TOOL_USE_FAILURE) => AgentState::Error,
+        Some(
+            EVENT_NOTIFICATION
+            | EVENT_PERMISSION_DENIED
+            | EVENT_SESSION_START
+            | EVENT_SUBAGENT_START
+            | EVENT_SUBAGENT_STOP
+            | EVENT_PRE_COMPACT
+            | EVENT_POST_COMPACT,
+        ) => return Ok(None),
         Some(unknown) => return Err(HookError::UnknownEvent(unknown.to_string())),
         None => {
             return Err(HookError::UnknownEvent(
-                "No hook event specified in Claude payload".to_string(),
+                "no hook_event_name in payload".to_string(),
             ));
         }
     };
-
-    Ok(StatusPayload::new(state, AgentKind::Claude, session_id))
+    let session_id = value
+        .get("session_id")
+        .and_then(Value::as_str)
+        .unwrap_or(DEFAULT_SESSION_ID);
+    Ok(Some(StatusPayload::new(state, agent, session_id)))
 }
 
 #[cfg(test)]

@@ -1,0 +1,10 @@
+{
+  "session_id": "84cf6721-45e6-4a43-877d-16c32be055ed",
+  "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed.jsonl",
+  "cwd": "C:\\Users\\user\\Projects\\agent-status-light",
+  "scratchpad_dir": "C:\\Users\\user\\AppData\\Local\\Temp\\claude\\C--Users-user-Projects-agent-status-light\\84cf6721-45e6-4a43-877d-16c32be055ed\\scratchpad",
+  "prompt_id": "0010e62c-57b8-4371-9cad-9be505dd3d83",
+  "hook_event_name": "Notification",
+  "message": "Claude is waiting for your input",
+  "notification_type": "idle_prompt"
+}

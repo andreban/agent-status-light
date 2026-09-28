@@ -37,6 +37,7 @@ The project plan and architectural specification are documented in ZNotes note `
 - **Serial Sink**: Opens the serial port on each hook event, writes one line and closes it. It retries briefly when the port is busy (parallel tool calls run hooks concurrently). The port comes from `--port` or `ASL_PORT`.
 - **Wire Protocol**: Strictly simplex (host-to-device), newline-delimited JSON (`{"state":"...","agent":"...","session_id":"..."}\n`). No handshake.
 - **Firmware**: **Pimoroni Tiny 2040** (RP2040, native USB CDC, active-low RGB LED on GP18/GP19/GP20), in MicroPython.
+  - Also a **Raspberry Pi Pico** with `NUM_PIXELS` NeoPixels on GP16 (`firmware/pico-neopixel/`), sharing the Tiny 2040's `status_light.py`.
   - Hardware-free logic lives in `status_light.py`, which is tested on the desktop.
   - The firmware turns `working`/`waiting` into `done` after 10 minutes without messages, because some agents send no event on cancel or deny.
 - **Planned**: an HTTP sink for Wi-Fi devices (#5).
